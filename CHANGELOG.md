@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- Best-effort structural reporting of custom account signature shapes when verification cannot check them (`InspectResult.CustomSignature`, `SignatureShape`).
+
+
 All notable changes to this project are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
