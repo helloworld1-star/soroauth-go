@@ -95,13 +95,32 @@ func ExampleNewPasskeySigner() {
 	// Output: signer address: GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF
 }
 func ExampleInspect_signatureShape() {
-	bytesSig := make([]byte, 32)
-	val := xdr.ScVal{
-		Type:  xdr.ScValTypeScvBytes,
-		Bytes: (*xdr.ScBytes)(&bytesSig),
+	var key xdr.Uint256
+	key[0] = 1
+	accountID := xdr.AccountId{
+		Type:    xdr.PublicKeyTypePublicKeyTypeEd25519,
+		Ed25519: &key,
 	}
-	shape := DescribeSignature(val)
+	address := xdr.ScAddress{
+		Type:      xdr.ScAddressTypeScAddressTypeAccount,
+		AccountId: &accountID,
+	}
+
+	entry := xdr.SorobanAuthorizationEntry{
+		Credentials: xdr.SorobanCredentials{
+			Type: xdr.SorobanCredentialsTypeSorobanCredentialsAddress,
+			Address: &xdr.SorobanAddressCredentials{
+				Address:                   address,
+				Nonce:                     1,
+				SignatureExpirationLedger: 100,
+				Signature:                 xdr.ScVal{Type: xdr.ScValTypeScvVoid},
+			},
+		},
+	}
+
+	shape := DescribeSignature(entry.Credentials.Address.Signature)
 	fmt.Println(shape.Type)
+
 	// Output:
-	// unknown
+	// void
 }
