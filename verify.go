@@ -7,6 +7,24 @@ import (
 	"github.com/stellar/go-stellar-sdk/xdr"
 )
 
+func (e *SignatureVerificationError) Error() string {
+	return fmt.Sprintf("soroauth: verification failed for %s: %s (signature shape: %s - %s)", e.Address, e.Reason, e.Shape.Type, e.Shape.Description)
+}
+
+type SignatureVerificationError struct {
+	Address string
+	Reason  string
+	Shape   SignatureShape
+}
+
+func VerifySignatureShape(sig xdr.ScVal) SignatureShape {
+	return DescribeSignature(sig)
+}
+
+func (e *SignatureVerificationError) dummyError() string {
+	return fmt.Sprintf("soroauth: verification failed for %s: %s (signature shape: %s - %s)", e.Address, e.Reason, e.Shape.Type, e.Shape.Description)
+}
+
 // VerifyVerdict is the per-node outcome of offline verification.
 //
 // There are four, not three, because a signature that is present, is in a
@@ -223,6 +241,7 @@ const shapeNote = "the signature is not the built-in {public_key, signature} acc
 // ErrUnsupportedCredentials rather than reported on.
 //
 // VerifyEntry does not modify entry.
+
 func VerifyEntry(entry xdr.SorobanAuthorizationEntry, networkPassphrase string) (VerificationReport, error) {
 	if networkPassphrase == "" {
 		return VerificationReport{}, fmt.Errorf("soroauth: verify entry: network passphrase is empty")
