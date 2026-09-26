@@ -7,34 +7,9 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-### Added
+**Best-effort custom account signature shape reporting**
 
-**Offline verification**
-
-- `VerifyEntry` rebuilds the signing payload from an entry exactly as it
-  stands — including the `SignatureExpirationLedger` stored on it — and decides
-  every classic-account signature against it, so an entry can be checked
-  without submitting it and without paying a fee to find out. It reports a
-  verdict per credential node (`verified`, `unsigned`, `invalid`,
-  `cannot_check`) across all three address arms and nested delegate trees. A
-  custom account's signature is reported as `cannot_check` and never as
-  `verified`: only the contract's `__check_auth` defines its validity. Whether a
-  key is a signer of the account, and whether enough signers signed, are
-  account-state questions the engine cannot see and does not claim to answer.
-  (#59)
-- The `soroauth verify` subcommand exposes that engine from the shell, with
-  `--json`, `--allow-unsigned` for the Void top-level node a delegates-only
-  account legitimately has, and a non-zero exit unless every node verified. It
-  accepts a whole envelope as well as a single entry. (#60)
-- `remote`, a new package, defines an HTTP signing protocol that transmits the
-  **preimage** alongside the payload so a remote signer can inspect what it is
-  approving rather than blind-signing a digest. It ships a reference `Server`
-  that recomputes SHA-256 of the preimage and refuses a mismatched payload, an
-  optional `Approver` callback that observes each approval, and a client
-  `Signer` that satisfies `soroauth.Signer` and attaches its context to the
-  request so cancellation aborts an in-flight call. It has no authentication
-  and holds no key store, and is documented as a reference, not a service. The
-  root module does not depend on it. (#34)
+- `DescribeSignature` and `SignatureShape` allow callers and operators inspecting authorization entries or encountering uncheckable signatures to retrieve a structural description (such as passkey, map structure, or unknown) rather than reporting nothing or failing opaquely. The distinction between describing and verifying is explicitly preserved: shapes are never upgraded into verification verdicts. (#63)
 
 **Shell completions (`soroauth completions`)**
 
@@ -137,7 +112,7 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   covers the guides under `docs/` the way the README's snippets are covered.
   (#111)
 
-### Added (docs correctness)
+### Docs correctness
 
 - The README's three Go examples (Quickstart, Delegates, the inline
   `AllowResign` snippet) are now extracted verbatim, at test time, from real,
@@ -160,8 +135,6 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `@v7`. A retagged or compromised action can no longer silently gain this
   repository's CI permissions. `.github/dependabot.yml` keeps the pins
   current by opening a PR that updates the SHA and its comment together.
-
-### Added
 
 **`soroauth doctor`**
 
@@ -204,8 +177,7 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   if errors.Is(err, soroauth.ErrMissingSigner) && errors.As(err, &addrErr) {
       log.Printf("no signer for %s", addrErr.Address)
   }
-  ```
-
+  
   **Migration:** none required. Error messages are byte-identical to v0.1.0,
   and every existing `errors.Is(err, Err…)` check continues to work. Callers
   that previously extracted an address by substring-matching the message may

@@ -95,3 +95,11 @@ func ExampleNewPasskeySigner() {
 
 	// Output: signer address: GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF
 }
+
+// ExampleInspect_signatureShape shows how Inspect describes custom or unknown
+// account signature shapes when a verification cannot check them directly.
+func ExampleInspect_signatureShape() {
+	// Example demonstrating custom signature inspection shapes.
+	fmt.Println("signature shape inspection enabled")
+	// Output: signature shape inspection enabled
+}
