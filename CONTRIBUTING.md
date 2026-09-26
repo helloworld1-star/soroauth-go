@@ -70,14 +70,44 @@ The underlying commands are:
 ```sh
 gofmt -l .        # must print nothing
 go vet ./...
+golangci-lint run ./...
 go test -race ./...
 ```
 
-CI runs exactly these, plus the golden-vector drift check and the signing-path
-budget check (see [Benchmarks](#benchmarks)). The suite runs with `-race`
-because `internal/xdrcopy` shares encoder and decoder buffers across calls
-through `sync.Pool`; without the detector, `TestCopyConcurrentReuse` would
-still pass on code that races.
+CI runs all of these except `golangci-lint`, plus the golden-vector drift check
+and the contract build; the signing-path budget check runs on push to main (see
+[Benchmarks](#benchmarks)). `golangci-lint` is a local gate only, because pull
+requests are capped at three checks — see [Linting](#linting).
+
+The suite runs with `-race` because `internal/xdrcopy` shares encoder and
+decoder buffers across calls through `sync.Pool`; without the detector,
+`TestCopyConcurrentReuse` would still pass on code that races.
+
+## Linting
+
+The gate is `.golangci.yml`, run locally. There is no `lint` job in
+`.github/workflows/ci.yml`: pull requests are capped at three checks, and the
+two that gate a merge are `vet and test` and `golden vectors are reproducible`.
+Run the linter before you push; a reviewer may also run it.
+
+The config is deliberately small, and each linter in it is there because the
+project would actually fix what it reports; the file says which and why, and
+which linters are off on purpose. A linter whose findings are all suppressed
+should be deleted rather than left as decoration.
+
+The config was verified against `v2.14.0`. Install that version and run it from
+the repository root:
+
+```sh
+GOBIN="$PWD/.tools" go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0
+./.tools/golangci-lint run ./...
+```
+
+`.tools/` is gitignored. `golangci-lint run` prints `0 issues.` and exits 0 when
+clean; a finding names the file, the line and the linter. Fix a finding rather
+than excluding it. The one documented exception is `fmt.Fprint*` to the CLI's
+own stdout/stderr streams, listed under `errcheck.exclude-functions`; adding to
+that list needs a reason in the config, not a `//nolint` at the call site.
 
 ### The nested adapter module
 
@@ -321,6 +351,13 @@ node gen.mjs
 ```
 
 Then commit the regenerated files together with the generator change.
+
+### Versioning the vector schema and reproducing failures
+
+Every golden vector carries an explicit `schema_version` field (currently `1`). The loader (`golden_test.go`) explicitly checks this version and rejects any unknown or missing schema version rather than guessing or ignoring removed/reinterpreted fields.
+
+- **Bumping the version:** When a protocol change or schema evolution requires altering the structure of golden vectors, increment `schema_version` in both the generator (`testdata/gen/gen.mjs`) and all committed vector JSON files under `testdata/vectors/`, and update the expected version check in `golden_test.go`.
+- **Reproducing a failure locally:** If a vector fails schema validation or drifts from the reference implementation, run `go test -run TestGoldenVectors` (or `make vectors-check`) from the repository root. The test suite will fail loudly, naming the vector and the exact mismatch or unsupported schema version.
 
 If a vector disagrees with the Go code, the Go code is wrong until proven
 otherwise. If you believe the vector itself is wrong, stop and open an issue

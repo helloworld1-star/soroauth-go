@@ -92,6 +92,10 @@ terminal program, not something a script drives, so it has no `--json` mode.
 ### Worked invocation — JSON output
 
 ```sh
+# Pipe subcommands together without intermediate shell variables:
+./soroauth delegates --entry <base64> --valid-until 1234567 --delegate GAAAA... --json |
+  ./soroauth sign --entry - --valid-until 1234567 --network testnet --secret-env SEED --json
+
 # What would this signer have to sign?
 SEED=SABC... ./soroauth payload \
   --entry <base64> --valid-until 1234567 --network testnet --json |
@@ -722,6 +726,10 @@ outside its author. Read the code before you sign anything valuable with it.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Golden vectors are never edited by hand.
 Security reports go through [SECURITY.md](SECURITY.md), not the issue tracker.
+
+The Markdown in this repository is link-checked by the
+[`links` workflow](.github/workflows/links.yml): internal links gate a PR,
+external links are reported on the weekly scheduled run.
 
 ## License
 
