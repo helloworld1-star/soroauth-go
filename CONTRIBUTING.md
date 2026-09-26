@@ -83,6 +83,14 @@ The suite runs with `-race` because `internal/xdrcopy` shares encoder and
 decoder buffers across calls through `sync.Pool`; without the detector,
 `TestCopyConcurrentReuse` would still pass on code that races.
 
+`internal/xdrcopy` also has a round-trip fuzz target, which the same `-race`
+reasoning covers: it asserts a copy is byte-identical to its source and shares
+no memory with it. Run it locally with
+
+```sh
+go test -fuzz=FuzzCopyRoundTrip -fuzztime=30s ./internal/xdrcopy
+```
+
 ## Linting
 
 The gate is `.golangci.yml`, run locally. There is no `lint` job in
