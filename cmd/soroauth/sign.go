@@ -110,10 +110,6 @@ func runSign(args []string, stdout, stderr io.Writer, getenv func(string) string
 		}
 		signer = soroauth.NewEd25519Signer(full)
 	} else {
-		assertionBytes, err := readAssertionInput(*assertionFlag)
-		if err != nil {
-			return writeJSONError(stdout, *jsonFlag, err)
-		}
 		// Passkey support not implemented in current library version.
 		return writeJSONError(stdout, *jsonFlag, newErrorf(ExitUsageError, "passkey authentication is not yet supported"))
 	}
