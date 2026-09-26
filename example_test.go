@@ -95,6 +95,13 @@ func ExampleNewPasskeySigner() {
 	// Output: signer address: GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF
 }
 func ExampleInspect_signatureShape() {
+	// Demonstration of DescribeSignature and SignatureShape for uncheckable signatures
+	var sig xdr.ScVal
+	shape := DescribeSignature(sig)
+	_ = shape
+}
+
+func Example_placeholder() {
 	var key xdr.Uint256
 	key[0] = 1
 	accountID := xdr.AccountId{
