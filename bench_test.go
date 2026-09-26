@@ -94,3 +94,13 @@ func BenchmarkNonceTrackerReserve(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkDescribeSignatureShape(b *testing.B) {
+	passkeyBytes := make([]byte, 64)
+	sig := xdr.ScVal{Type: xdr.ScValTypeScvBytes, Bytes: (*xdr.ScBytes)(&passkeyBytes)}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = DescribeSignature(sig)
+	}
+}
