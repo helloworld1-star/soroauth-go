@@ -73,6 +73,8 @@ jobs:
       # watching for concurrent misuse.
       - name: test
         run: go test -race ./...
+      - name: fuzz xdrcopy
+        run: go test -fuzz=FuzzCopyRoundTrip -fuzztime=10s ./internal/xdrcopy
 
   # The wallet SDK adapter is a nested module, so the gofmt, vet and test steps
   # above do not reach it: `./...` stops at any directory holding its own
@@ -106,18 +108,6 @@ jobs:
       - name: test
         working-directory: adapters/walletsdk
         run: go test -race ./...
-
-  fuzz:
-    name: fuzz xdrcopy
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
-        with:
-          go-version-file: go.mod
-          check-latest: true
-      - name: run xdrcopy fuzzing
-        run: go test -fuzz=Fuzz -fuzztime=1m ./internal/xdrcopy
   cross-compile:
     name: cross-compile release targets
     runs-on: ubuntu-latest

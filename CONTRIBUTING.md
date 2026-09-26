@@ -73,7 +73,12 @@ go test -race ./...
 ```
 
 CI runs exactly these, plus the golden-vector drift check and the signing-path
-budget check (see [Benchmarks](#benchmarks)). The suite runs with `-race`
+budget check (see [Benchmarks](#benchmarks)). To run the xdrcopy round-trip fuzzer locally:
+```sh
+go test -fuzz=FuzzCopyRoundTrip -fuzztime=30s ./internal/xdrcopy
+```
+
+The suite runs with `-race`
 because `internal/xdrcopy` shares encoder and decoder buffers across calls
 through `sync.Pool`; without the detector, `TestCopyConcurrentReuse` would
 still pass on code that races.
@@ -414,25 +419,7 @@ deterministic test to narrow it down.
 
 ### Capturing regressions
 
-If a property test or fuzzer discovers a bug, capture the failing input as a regression
-
-### Fuzz Testing
-
-The `internal/xdrcopy` package includes a fuzz test (`FuzzCopy`) that verifies the deep-copy round-trip remains byte-identical and memory-isolated for all valid XDR inputs, and that invalid inputs return an error and the zero value.
-
-```sh
-go test -fuzz=Fuzz -fuzztime=1m ./internal/xdrcopy
-```
-
-If the fuzzer finds a crash or a violation of these properties, it saves the triggering input to `internal/xdrcopy/testdata/fuzz/FuzzCopy/<hash>`. To reproduce the failure:
-
-```sh
-go test -run=FuzzCopy/hash_here ./internal/xdrcopy
-```
-
-If the finding is a genuine bug, capture the `testdata` fixture as a committed unit test in `internal/xdrcopy/copy_test.go` to ensure it remains covered permanently.
-
-
+If a property test discovers a bug, capture the failing input as a regression
 fixture in `address_test.go` by adding a new table entry to
 `TestParseAddressRejects` or `TestParseAddressFormatAddressRoundTrip` with the
 exact address string that triggered the failure. This ensures the specific
