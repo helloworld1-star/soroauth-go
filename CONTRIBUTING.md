@@ -367,7 +367,25 @@ deterministic test to narrow it down.
 
 ### Capturing regressions
 
-If a property test discovers a bug, capture the failing input as a regression
+If a property test or fuzzer discovers a bug, capture the failing input as a regression
+
+### Fuzz Testing
+
+The `internal/xdrcopy` package includes a fuzz test (`FuzzCopy`) that verifies the deep-copy round-trip remains byte-identical and memory-isolated for all valid XDR inputs, and that invalid inputs return an error and the zero value.
+
+```sh
+go test -fuzz=Fuzz -fuzztime=1m ./internal/xdrcopy
+```
+
+If the fuzzer finds a crash or a violation of these properties, it saves the triggering input to `internal/xdrcopy/testdata/fuzz/FuzzCopy/<hash>`. To reproduce the failure:
+
+```sh
+go test -run=FuzzCopy/hash_here ./internal/xdrcopy
+```
+
+If the finding is a genuine bug, capture the `testdata` fixture as a committed unit test in `internal/xdrcopy/copy_test.go` to ensure it remains covered permanently.
+
+
 fixture in `address_test.go` by adding a new table entry to
 `TestParseAddressRejects` or `TestParseAddressFormatAddressRoundTrip` with the
 exact address string that triggered the failure. This ensures the specific
