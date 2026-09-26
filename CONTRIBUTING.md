@@ -478,6 +478,33 @@ executed in CI. If it passes locally but the full property test fails, the
 failure is in the extended search space — increase `MinSuccessfulTests` in the
 deterministic test to narrow it down.
 
+### Fuzzing ValidateDelegateOrder
+
+`FuzzValidateDelegateOrder` in `delegates_test.go` feeds arbitrary bytes to the
+XDR decoder and, for anything that decodes to an entry, asserts that
+`ValidateDelegateOrder` neither panics nor accepts a delegate array that is
+mis-ordered or carries a duplicate at one level. Its seed corpus is built from a
+golden vector, a hand-built well-formed tree, and that tree with one delegate
+address overwritten to duplicate its sibling.
+
+The seeds are constructed with `f` passed to the test helpers, which take
+`testing.TB`. Do not build a `&testing.T{}` literal to satisfy them: it is an
+uninitialised struct, so `Helper()` and `Fatalf()` on it panic instead of
+reporting, and a seed that failed to build would take the whole target down
+rather than failing it.
+
+The fuzz run itself is not a pull-request check — 30 seconds of fuzzing per push
+would slow every review for a target whose job is to find inputs over time. It
+runs on push to `main` and on demand, as the `fuzz` job in
+`.github/workflows/ci-go.yml`. What a pull request does exercise is the seed
+corpus, through the ordinary `go test ./...`.
+
+To run it locally:
+
+```sh
+go test -run='^$' -fuzz=FuzzValidateDelegateOrder -fuzztime=30s .
+```
+
 ### Capturing regressions
 
 If a property test discovers a bug, capture the failing input as a regression
