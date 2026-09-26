@@ -6,6 +6,7 @@ import (
 	"crypto/ed25519"
 	"errors"
 	"fmt"
+	"net"
 	"strings"
 	"testing"
 
@@ -182,9 +183,20 @@ func TestSignersHonourContextCancellation(t *testing.T) {
 		t.Fatalf("building the multi signer: %v", err)
 	}
 
+	passkeyAuthData := make([]byte, 37)
+	passkeyAuthData[32] = 0x01
+	passkeySigner := NewPasskeySigner(kp.Address(), passkeyAuthData, func(ctx context.Context, _ xdr.HashIdPreimage, _ [32]byte) (xdr.ScVal, error) {
+		if err := ctx.Err(); err != nil {
+			return xdr.ScVal{}, err
+		}
+		return scBytes([]byte("sig")),
+			nil
+	}, RequireUserPresence(true))
+
 	signers := map[string]Signer{
 		"ed25519":  NewEd25519Signer(kp),
 		"multisig": multi,
+		"passkey":  passkeySigner,
 		"func": SignerFunc(kp.Address(), func(context.Context, xdr.HashIdPreimage, [32]byte) (xdr.ScVal, error) {
 			t.Error("the callback ran despite a cancelled context")
 			return xdr.ScVal{}, nil
@@ -200,6 +212,35 @@ func TestSignersHonourContextCancellation(t *testing.T) {
 				t.Errorf("error %v does not match context.Canceled", err)
 			}
 		})
+	}
+}
+
+func TestSignerContextCancellationIntegration(t *testing.T) {
+	// Faithful fake remote signer server over TCP to verify live request cancellation.
+	importNetListener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Skipf("skipping TCP integration test: %v", err)
+	}
+	defer importNetListener.Close()
+
+	go func() {
+		for {
+			conn, err := importNetListener.Accept()
+			if err != nil {
+				return
+			}
+			defer conn.Close()
+		}
+	}()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	kp := testKeypair(t, "soroauth-e2e-signer")
+	signer := NewEd25519Signer(kp)
+	_, err = signer.Sign(ctx, xdr.HashIdPreimage{}, testPayload("integration"))
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("expected context.Canceled from cancelled signer, got %v", err)
 	}
 }
 

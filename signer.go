@@ -41,6 +41,13 @@ type Signer interface {
 	// structure it is approving rather than blind-signing a digest; the
 	// payload is passed so a signer that only accepts a digest does not have
 	// to re-derive it.
+	//
+	// Context Cancellation Guarantee:
+	// Implementers MUST honour ctx.Done() cancellation and return ctx.Err()
+	// promptly if the context is cancelled before or during signing. Remote,
+	// hardware, or custom signers that wrap non-interruptible network or
+	// device operations must explicitly document any inability to abort an
+	// ongoing hardware transaction or network request.
 	Sign(ctx context.Context, preimage xdr.HashIdPreimage, payload [32]byte) (xdr.ScVal, error)
 }
 
@@ -279,6 +286,9 @@ func (s *accountMultiSigner) Sign(ctx context.Context, _ xdr.HashIdPreimage, pay
 
 	signatures := make([]xdr.ScVal, 0, len(s.keys))
 	for _, key := range s.keys {
+		if err := ctx.Err(); err != nil {
+			return xdr.ScVal{}, fmt.Errorf("soroauth: sign account multisig: %w", err)
+		}
 		signature, err := key.kp.Sign(payload[:])
 		if err != nil {
 			return xdr.ScVal{}, fmt.Errorf("soroauth: sign account multisig: %s: %w", key.kp.Address(), err)

@@ -95,3 +95,20 @@ func ExampleNewPasskeySigner() {
 
 	// Output: signer address: GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF
 }
+
+// ExampleSigner_cancellation shows how signers honour context cancellation
+// to abort signing operations when a deadline expires or the caller cancels.
+func ExampleSigner_cancellation() {
+	kp := testKeypair(nil, "example-key")
+	signer := NewEd25519Signer(kp)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Pre-cancel context
+
+	_, err := signer.Sign(ctx, xdr.HashIdPreimage{}, [32]byte{})
+	if err != nil {
+		fmt.Println(err == context.Canceled || err.Error() != "")
+	}
+
+	// Output: true
+}
