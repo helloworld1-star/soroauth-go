@@ -7,24 +7,6 @@ import (
 	"github.com/stellar/go-stellar-sdk/xdr"
 )
 
-func (e *SignatureVerificationError) Error() string {
-	return fmt.Sprintf("soroauth: verification failed for %s: %s (signature shape: %s - %s)", e.Address, e.Reason, e.Shape.Type, e.Shape.Description)
-}
-
-type SignatureVerificationError struct {
-	Address string
-	Reason  string
-	Shape   SignatureShape
-}
-
-func VerifySignatureShape(sig xdr.ScVal) SignatureShape {
-	return DescribeSignature(sig)
-}
-
-func (e *SignatureVerificationError) dummyError() string {
-	return fmt.Sprintf("soroauth: verification failed for %s: %s (signature shape: %s - %s)", e.Address, e.Reason, e.Shape.Type, e.Shape.Description)
-}
-
 // VerifyVerdict is the per-node outcome of offline verification.
 //
 // There are four, not three, because a signature that is present, is in a
@@ -311,6 +293,27 @@ func VerifyEntry(entry xdr.SorobanAuthorizationEntry, networkPassphrase string) 
 //
 // encoded is the XDR encoding of the node's address, which is how addresses
 // are compared throughout this library and how the node's type is recovered.
+// VerifySignatureShape describes the structural shape of a signature best-effort.
+func VerifySignatureShape(sig xdr.ScVal) SignatureShape {
+	return DescribeSignature(sig)
+}
+
+// SignatureVerificationError represents an error during signature verification.
+type SignatureVerificationError struct {
+	Address string
+	Reason  string
+	Shape   SignatureShape
+}
+
+// Error returns the error message.
+func (e *SignatureVerificationError) Error() string {
+	return fmt.Sprintf("soroauth: verification failed for %s: %s (signature shape: %s - %s)", e.Address, e.Reason, e.Shape.Type, e.Shape.Description)
+}
+
+func (e *SignatureVerificationError) dummyError() string {
+	return fmt.Sprintf("soroauth: verification failed for %s: %s (signature shape: %s - %s)", e.Address, e.Reason, e.Shape.Type, e.Shape.Description)
+}
+
 func verifyNode(signature xdr.ScVal, encoded []byte, payload [32]byte) (NodeVerdict, error) {
 	var address xdr.ScAddress
 	if err := address.UnmarshalBinary(encoded); err != nil {
