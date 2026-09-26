@@ -29,6 +29,41 @@ func testAddress(t *testing.T, label string) xdr.ScAddress {
 	return xdr.ScAddress{Type: xdr.ScAddressTypeScAddressTypeAccount, AccountId: &accountID}
 }
 
+func FuzzCopy(f *testing.F) {
+	f.Add(mustMarshal(nil, sampleEntry(nil)))
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		var entry xdr.SorobanAuthorizationEntry
+		n, err := xdr.Unmarshal(bytes.NewReader(data), &entry)
+		if err != nil {
+			return
+		}
+		inputBytes := data[:n]
+
+		copy, err := Copy(entry)
+		if err != nil {
+			t.Fatalf("Copy failed on valid input: %v", err)
+		}
+
+		copyBytes, err := copy.MarshalBinary()
+		if err != nil {
+			t.Errorf("copy failed to marshal: %v", err)
+		}
+
+		if !bytes.Equal(inputBytes, copyBytes) {
+			t.Errorf("copy not byte-identical to original\n want %x\n  got %x", inputBytes, copyBytes)
+		}
+
+		originalMarshal := mustMarshal(t, entry)
+		// Access Nonce through the V2 arm for the test
+		copy.Credentials.AddressV2.Nonce += 1
+		newOriginalMarshal := mustMarshal(t, entry)
+		if !bytes.Equal(originalMarshal, newOriginalMarshal) {
+			t.Error("copy shares memory with original: mutation affected source")
+		}
+	})
+}
+
 // sampleEntry builds an entry that exercises every kind of indirection the XDR
 // types use: a union arm behind a pointer (Credentials.AddressV2), a doubly
 // indirected slice (ScVal.Vec is **ScVec), a pointer union arm inside the
