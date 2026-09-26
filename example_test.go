@@ -3,7 +3,6 @@ package soroauth
 import (
 	"context"
 	"fmt"
-
 	"github.com/stellar/go-stellar-sdk/xdr"
 )
 
@@ -94,4 +93,43 @@ func ExampleNewPasskeySigner() {
 	fmt.Printf("signer address: %s\n", signer.Address())
 
 	// Output: signer address: GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF
+}
+func ExampleInspect_signatureShape() {
+	var sig xdr.ScVal
+	shape := DescribeSignature(sig)
+	fmt.Printf("shape type: %s\n", shape.Type)
+
+	// Output:
+	// shape type: void
+}
+
+func Example_placeholder() {
+	var key xdr.Uint256
+	key[0] = 1
+	accountID := xdr.AccountId{
+		Type:    xdr.PublicKeyTypePublicKeyTypeEd25519,
+		Ed25519: &key,
+	}
+	address := xdr.ScAddress{
+		Type:      xdr.ScAddressTypeScAddressTypeAccount,
+		AccountId: &accountID,
+	}
+
+	entry := xdr.SorobanAuthorizationEntry{
+		Credentials: xdr.SorobanCredentials{
+			Type: xdr.SorobanCredentialsTypeSorobanCredentialsAddress,
+			Address: &xdr.SorobanAddressCredentials{
+				Address:                   address,
+				Nonce:                     1,
+				SignatureExpirationLedger: 100,
+				Signature:                 xdr.ScVal{Type: xdr.ScValTypeScvVoid},
+			},
+		},
+	}
+
+	shape := DescribeSignature(entry.Credentials.Address.Signature)
+	fmt.Printf("shape type: %s\n", shape.Type)
+
+	// Output:
+	// shape type: void
 }
