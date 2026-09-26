@@ -100,10 +100,10 @@ func ExampleNewPasskeySigner() {
 // account signature shapes when verification cannot check them directly.
 func ExampleInspect_signatureShape() {
 	sig := xdr.ScVal{
-		Type: xdr.ScValTypeScvMap,
+		Type: xdr.ScValTypeScvVoid,
 	}
 	shape := DescribeSignature(sig)
 	fmt.Printf("type: %s, description: %s\n", shape.Type, shape.Description)
 
-	// Output: type: map, description: map structure signature
+	// Output: type: void, description: void/empty signature
 }
