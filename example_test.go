@@ -3,9 +3,10 @@ package soroauth
 import (
 	"context"
 	"fmt"
-
 	"github.com/stellar/go-stellar-sdk/xdr"
 )
+
+
 
 // ExampleDecodeAuthorizationEntry shows the entry point for a base64 entry that
 // came from somewhere else. The limits it applies are documented on the
@@ -95,3 +96,5 @@ func ExampleNewPasskeySigner() {
 
 	// Output: signer address: GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF
 }
+
+
