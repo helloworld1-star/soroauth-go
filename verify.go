@@ -241,6 +241,8 @@ const shapeNote = "the signature is not the built-in {public_key, signature} acc
 // ErrUnsupportedCredentials rather than reported on.
 //
 // VerifyEntry does not modify entry.
+// VerifySignatureShape is removed per feedback.
+
 func VerifyEntry(entry xdr.SorobanAuthorizationEntry, networkPassphrase string) (VerificationReport, error) {
 	if networkPassphrase == "" {
 		return VerificationReport{}, fmt.Errorf("soroauth: verify entry: network passphrase is empty")
