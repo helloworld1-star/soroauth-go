@@ -7,6 +7,22 @@ import (
 	"github.com/stellar/go-stellar-sdk/xdr"
 )
 
+// VerifySignatureShape provides a best-effort structural description when a signature cannot be checked.
+func VerifySignatureShape(sig xdr.ScVal) SignatureShape {
+	return DescribeSignature(sig)
+}
+
+// SignatureVerificationError wraps signature check failures with best-effort shape info.
+type SignatureVerificationError struct {
+	Address string
+	Shape   SignatureShape
+	Reason  string
+}
+
+func (e *SignatureVerificationError) Error() string {
+	return fmt.Sprintf("soroauth: verification failed for %s: %s (signature shape: %s - %s)", e.Address, e.Reason, e.Shape.Type, e.Shape.Description)
+}
+
 // VerifyVerdict is the per-node outcome of offline verification.
 //
 // There are four, not three, because a signature that is present, is in a
