@@ -4,12 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/stellar/go-stellar-sdk/network"
+	"github.com/stellar/go-stellar-sdk/xdr"
 	"reflect"
 	"strings"
 	"testing"
-
-	"github.com/stellar/go-stellar-sdk/network"
-	"github.com/stellar/go-stellar-sdk/xdr"
 )
 
 func TestInspectReportsTheArm(t *testing.T) {
