@@ -197,13 +197,35 @@ func TestInspectNodeInfoJSONGolden(t *testing.T) {
 	if err != nil {
 		t.Fatalf("marshaling node info: %v", err)
 	}
-	// Verify JSON serialization includes the Shape field correctly
+	// Verify JSON serialization includes the Shape field correctly and matches golden schema expectations
 	var m map[string]any
 	if err := json.Unmarshal(data, &m); err != nil {
 		t.Fatalf("unmarshaling node info: %v", err)
 	}
 	if _, ok := m["shape"]; !ok {
 		t.Error("serialized NodeInfo json is missing 'shape' field")
+	}
+	if m["address"] != "GBEXAMPLE" {
+		t.Errorf("expected address GBEXAMPLE, got %v", m["address"])
+	}
+	if m["signed"] != true {
+		t.Errorf("expected signed true, got %v", m["signed"])
+	}
+	// Verify backwards compatibility of omitting Shape when nil
+	nilShapeNode := NodeInfo{
+		Address: "GBEXAMPLE",
+		Signed:  false,
+	}
+	dataNil, err := json.Marshal(nilShapeNode)
+	if err != nil {
+		t.Fatalf("marshaling node info with nil shape: %v", err)
+	}
+	var mNil map[string]any
+	if err := json.Unmarshal(dataNil, &mNil); err != nil {
+		t.Fatalf("unmarshaling node info with nil shape: %v", err)
+	}
+	if _, ok := mNil["shape"]; ok {
+		t.Error("serialized NodeInfo json should omit 'shape' field when nil for backwards compatibility")
 	}
 }
 
