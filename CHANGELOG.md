@@ -7,8 +7,6 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-### Added
-
 **Offline verification**
 
 - `VerifyEntry` rebuilds the signing payload from an entry exactly as it
@@ -35,6 +33,10 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   request so cancellation aborts an in-flight call. It has no authentication
   and holds no key store, and is documented as a reference, not a service. The
   root module does not depend on it. (#34)
+
+**Best-effort custom account signature shape reporting**
+
+- `DescribeSignature` and `SignatureShape` allow callers and operators inspecting authorization entries or encountering uncheckable signatures to retrieve a structural description (such as passkey, map structure, or unknown) rather than reporting nothing or failing opaquely. The distinction between describing and verifying is explicitly preserved: shapes are never upgraded into verification verdicts. (#63)
 
 **Shell completions (`soroauth completions`)**
 
@@ -204,8 +206,7 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   if errors.Is(err, soroauth.ErrMissingSigner) && errors.As(err, &addrErr) {
       log.Printf("no signer for %s", addrErr.Address)
   }
-  ```
-
+  
   **Migration:** none required. Error messages are byte-identical to v0.1.0,
   and every existing `errors.Is(err, Err…)` check continues to work. Callers
   that previously extracted an address by substring-matching the message may
