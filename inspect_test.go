@@ -227,6 +227,23 @@ func TestInspectNodeInfoJSONGolden(t *testing.T) {
 	if _, ok := mNil["shape"]; ok {
 		t.Error("serialized NodeInfo json should omit 'shape' field when nil for backwards compatibility")
 	}
+
+	// Test vector ScValTypeScvVec signature description explicitly
+	vecVal := xdr.ScVal{Type: xdr.ScValTypeScvVec}
+	vecShape := DescribeSignature(vecVal)
+	if vecShape.Type != SignatureShapeUnknown {
+		t.Errorf("vector shape type is %v, want %v", vecShape.Type, SignatureShapeUnknown)
+	}
+	if !strings.Contains(vecShape.Description, "vector structure signature") {
+		t.Errorf("vector shape description is %q, want it to mention vector structure signature", vecShape.Description)
+	}
+
+	// Test nil Bytes pointer safety
+	nilBytesVal := xdr.ScVal{Type: xdr.ScValTypeScvBytes, Bytes: nil}
+	nilBytesShape := DescribeSignature(nilBytesVal)
+	if nilBytesShape.Type != SignatureShapeUnknown {
+		t.Errorf("nil bytes shape type is %v, want %v", nilBytesShape.Type, SignatureShapeUnknown)
+	}
 }
 
 func TestInspectReportsTheDelegateTree(t *testing.T) {
