@@ -1,10 +1,11 @@
 package xdrcopy
 
 import (
+	"testing"
+
 	"github.com/stellar/go-stellar-sdk/xdr"
 	xdrcodec "github.com/stellar/go-xdr/xdr3"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func (u underConsume) EncodeTo(e *xdrcodec.Encoder) error {
