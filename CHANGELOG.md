@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to this project are documented here.
+All notable changes to this project are documented here:
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -8,6 +8,12 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 - `DescribeSignature` and `SignatureShape` report structural descriptions of uncheckable custom account signatures best-effort without upgrading them into verification verdicts. (#63)
+- New subcommand: `soroauth completions --shell bash|zsh|fish` prints a completion script for that shell on stdout (`--json` wraps it with the
+  shell name). The scripts complete the subcommands, each subcommand's flags,
+  and the enumerable flag values (`--shell`, `--format`, and the `--network`
+  shorthands `testnet`/`public`); fish additionally carries each flag's
+  description into the tab menu. `--secret-env` is completed by name only:
+  the shells never see or complete a variable's value. (#114)
 - New subcommand: `soroauth completions --shell bash|zsh|fish` prints a completion script for that shell on stdout (`--json` wraps it with the
   shell name). The scripts complete the subcommands, each subcommand's flags,
   and the enumerable flag values (`--shell`, `--format`, and the `--network`
