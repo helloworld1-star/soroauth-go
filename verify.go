@@ -7,6 +7,10 @@ import (
 	"github.com/stellar/go-stellar-sdk/xdr"
 )
 
+func (e *SignatureVerificationError) Error() string {
+	return fmt.Sprintf("soroauth: verification failed for %s: %s (signature shape: %s - %s)", e.Address, e.Reason, e.Shape.Type, e.Shape.Description)
+}
+
 type SignatureVerificationError struct {
 	Address string
 	Reason  string
@@ -15,10 +19,6 @@ type SignatureVerificationError struct {
 
 func VerifySignatureShape(sig xdr.ScVal) SignatureShape {
 	return DescribeSignature(sig)
-}
-
-func (e *SignatureVerificationError) Error() string {
-	return fmt.Sprintf("soroauth: verification failed for %s: %s (signature shape: %s - %s)", e.Address, e.Reason, e.Shape.Type, e.Shape.Description)
 }
 
 func (e *SignatureVerificationError) dummyError() string {
