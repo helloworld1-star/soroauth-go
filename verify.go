@@ -293,11 +293,6 @@ func VerifyEntry(entry xdr.SorobanAuthorizationEntry, networkPassphrase string) 
 //
 // encoded is the XDR encoding of the node's address, which is how addresses
 // are compared throughout this library and how the node's type is recovered.
-// VerifySignatureShape describes the structural shape of a signature best-effort.
-func VerifySignatureShape(sig xdr.ScVal) SignatureShape {
-	return DescribeSignature(sig)
-}
-
 // SignatureVerificationError represents an error during signature verification.
 type SignatureVerificationError struct {
 	Address string
