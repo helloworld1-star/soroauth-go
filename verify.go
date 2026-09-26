@@ -223,6 +223,7 @@ const shapeNote = "the signature is not the built-in {public_key, signature} acc
 // ErrUnsupportedCredentials rather than reported on.
 //
 // VerifyEntry does not modify entry.
+
 func VerifyEntry(entry xdr.SorobanAuthorizationEntry, networkPassphrase string) (VerificationReport, error) {
 	if networkPassphrase == "" {
 		return VerificationReport{}, fmt.Errorf("soroauth: verify entry: network passphrase is empty")
@@ -292,6 +293,23 @@ func VerifyEntry(entry xdr.SorobanAuthorizationEntry, networkPassphrase string) 
 //
 // encoded is the XDR encoding of the node's address, which is how addresses
 // are compared throughout this library and how the node's type is recovered.
+// VerifySignatureShape describes the structural shape of a signature best-effort.
+func VerifySignatureShape(sig xdr.ScVal) SignatureShape {
+	return DescribeSignature(sig)
+}
+
+// SignatureVerificationError represents an error during signature verification.
+type SignatureVerificationError struct {
+	Address string
+	Reason  string
+	Shape   SignatureShape
+}
+
+// Error returns the error message.
+func (e *SignatureVerificationError) Error() string {
+	return fmt.Sprintf("soroauth: verification failed for %s: %s (signature shape: %s - %s)", e.Address, e.Reason, e.Shape.Type, e.Shape.Description)
+}
+
 func verifyNode(signature xdr.ScVal, encoded []byte, payload [32]byte) (NodeVerdict, error) {
 	var address xdr.ScAddress
 	if err := address.UnmarshalBinary(encoded); err != nil {
