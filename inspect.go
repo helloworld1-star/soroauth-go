@@ -46,7 +46,7 @@ func DescribeSignature(sig xdr.ScVal) SignatureShape {
 				Description: "64-byte binary passkey signature",
 			}
 		}
-		length := 0
+		var length int
 		if sig.Bytes != nil && *sig.Bytes != nil {
 			length = len(*sig.Bytes)
 		}
