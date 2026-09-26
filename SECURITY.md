@@ -16,6 +16,15 @@ paid on-call, so that is a realistic commitment rather than an optimistic one.
 If a fix is needed you will be credited in the advisory and the changelog unless
 you ask otherwise.
 
+## Context Cancellation Threat Model & Guarantees
+
+**Threat Model:** 
+Callers interacting with remote HSMs, hardware tokens, browser extensions, or custom signing RPC services rely on context cancellation and deadlines to bound latency and prevent goroutine or connection leaks. Without strict context propagation and early cancellation checks in `Signer.Sign`, a stalled remote peer, unresponsive hardware device, or slow network socket can hang client goroutines indefinitely.
+
+**Guarantees:**
+- Every in-tree signer (`NewEd25519Signer`, `NewAccountMultiSigner`, `NewPasskeySigner`, and `SignerFunc`) inspects `ctx.Done()` before invoking cryptographic signing or downstream callbacks, failing immediately with `context.Canceled` or `context.DeadlineExceeded` if the context is terminated.
+- Remote or hardware signer implementations must explicitly document any underlying inability to abort ongoing hardware operations or network requests if cancellation cannot interrupt the physical device or socket.
+
 ## Scope
 
 **Signature-correctness bugs are critical.** Anything in these categories should
