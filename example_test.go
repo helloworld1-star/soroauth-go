@@ -95,3 +95,15 @@ func ExampleNewPasskeySigner() {
 
 	// Output: signer address: GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF
 }
+
+// ExampleInspect_signatureShape shows how DescribeSignature describes custom or unknown
+// account signature shapes when verification cannot check them directly.
+func ExampleInspect_signatureShape() {
+	sig := xdr.ScVal{
+		Type: xdr.ScValTypeScvMap,
+	}
+	shape := DescribeSignature(sig)
+	fmt.Printf("type: %s, description: %s\n", shape.Type, shape.Description)
+
+	// Output: type: map, description: map structure signature
+}
