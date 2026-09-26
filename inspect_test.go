@@ -182,6 +182,31 @@ func TestInspectReportsCreateContractWithoutAFunction(t *testing.T) {
 	}
 }
 
+func TestInspectNodeInfoJSONGolden(t *testing.T) {
+	buf := make([]byte, 64)
+	shape := DescribeSignature(xdr.ScVal{
+		Type:  xdr.ScValTypeScvBytes,
+		Bytes: (*xdr.ScBytes)(&buf),
+	})
+	node := NodeInfo{
+		Address: "GBEXAMPLE",
+		Signed:  true,
+		Shape:   &shape,
+	}
+	data, err := json.Marshal(node)
+	if err != nil {
+		t.Fatalf("marshaling node info: %v", err)
+	}
+	// Verify JSON serialization includes the Shape field correctly
+	var m map[string]any
+	if err := json.Unmarshal(data, &m); err != nil {
+		t.Fatalf("unmarshaling node info: %v", err)
+	}
+	if _, ok := m["shape"]; !ok {
+		t.Error("serialized NodeInfo json is missing 'shape' field")
+	}
+}
+
 func TestInspectReportsTheDelegateTree(t *testing.T) {
 	base := entryForArm(t, xdr.SorobanCredentialsTypeSorobanCredentialsAddressV2, 42)
 	d1 := testKeypair(t, "soroauth-delegate-1").Address()
