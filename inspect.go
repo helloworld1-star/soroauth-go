@@ -19,8 +19,13 @@ const (
 type SignatureShapeType string
 
 const (
+	// SignatureShapePasskey represents a passkey signature shape.
 	SignatureShapePasskey SignatureShapeType = "passkey"
-	SignatureShapeMap     SignatureShapeType = "map"
+
+	// SignatureShapeMap represents a map structure signature shape.
+	SignatureShapeMap SignatureShapeType = "map"
+
+	// SignatureShapeUnknown represents an unknown or uncheckable signature shape.
 	SignatureShapeUnknown SignatureShapeType = "unknown"
 )
 
