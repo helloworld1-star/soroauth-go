@@ -505,6 +505,23 @@ func TestVerifyEntryDoesNotMutateInput(t *testing.T) {
 	}
 }
 
+// TestVerifySignatureShapeBestEffort verifies that unknown or uncheckable shapes return descriptive metadata without upgrading to verification verdicts.
+func TestVerifySignatureShapeBestEffort(t *testing.T) {
+	bytesSig := make([]byte, 32)
+	unknownVal := xdr.ScVal{
+		Type:  xdr.ScValTypeScvBytes,
+		Bytes: (*xdr.ScBytes)(&bytesSig),
+	}
+
+	shape := VerifySignatureShape(unknownVal)
+	if shape.Type != SignatureShapeUnknown {
+		t.Errorf("expected unknown shape type, got %v", shape.Type)
+	}
+	if shape.Description == "" {
+		t.Error("expected non-empty shape description")
+	}
+}
+
 // scMapVal and scI64 are small ScVal constructors the custom-shape table needs;
 // the accountSignature builder in signer.go covers the shape these are not.
 func scMapVal() xdr.ScVal {
