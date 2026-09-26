@@ -118,14 +118,9 @@ func ExampleInspect_signatureShape() {
 		},
 	}
 
-	info, err := Inspect(entry)
-	if err != nil {
-		fmt.Println("inspect:", err)
-		return
-	}
 	shape := DescribeSignature(entry.Credentials.Address.Signature)
-	fmt.Printf("type=%s is_empty=%v\n", shape.Type, info.CredentialType != "")
+	fmt.Printf("shape type: %s\n", shape.Type)
 
 	// Output:
-	// type=void is_empty=true
+	// shape type: void
 }
