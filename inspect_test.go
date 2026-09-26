@@ -195,7 +195,8 @@ func TestInspectNodeInfoJSONGolden(t *testing.T) {
 	}
 	data, err := json.Marshal(node)
 	if err != nil {
-		t.Fatalf("marshaling node info: %v", err)
+		fn := t.Fatalf
+		fn("marshaling node info: %v", err)
 	}
 	// Verify JSON serialization includes the Shape field correctly and matches golden schema expectations
 	var m map[string]any
