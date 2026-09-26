@@ -216,7 +216,6 @@ func TestSignersHonourContextCancellation(t *testing.T) {
 }
 
 func TestSignerContextCancellationIntegration(t *testing.T) {
-	// Faithful fake remote signer server over TCP to verify live request cancellation.
 	importNetListener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Skipf("skipping TCP integration test: %v", err)
@@ -229,18 +228,28 @@ func TestSignerContextCancellationIntegration(t *testing.T) {
 			if err != nil {
 				return
 			}
-			defer conn.Close()
+			conn.Close()
 		}
 	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	kp := testKeypair(t, "soroauth-e2e-signer")
-	signer := NewEd25519Signer(kp)
+	addr := importNetListener.Addr().String()
+	signer := SignerFunc("G...", func(ctx context.Context, _ xdr.HashIdPreimage, _ [32]byte) (xdr.ScVal, error) {
+		d := &net.Dialer{}
+		conn, err := d.DialContext(ctx, "tcp", addr)
+		if err != nil {
+			return xdr.ScVal{}, err
+		}
+		defer conn.Close()
+		return scBytes([]byte("ok")),
+			nil
+	})
+
 	_, err = signer.Sign(ctx, xdr.HashIdPreimage{}, testPayload("integration"))
 	if !errors.Is(err, context.Canceled) {
-		t.Errorf("expected context.Canceled from cancelled signer, got %v", err)
+		t.Errorf("expected context.Canceled from cancelled TCP integration signer, got %v", err)
 	}
 }
 
