@@ -299,6 +299,54 @@ func TestInspectShowsMisorderedDelegates(t *testing.T) {
 	}
 }
 
+func TestDescribeSignatureVectorShape(t *testing.T) {
+	sig := xdr.ScVal{Type: xdr.ScValTypeScvVec}
+	shape := DescribeSignature(sig)
+	if shape.Type != SignatureShapeUnknown {
+		t.Errorf("got type %v, want %v", shape.Type, SignatureShapeUnknown)
+	}
+	if shape.Description != "vector structure signature" {
+		t.Errorf("got description %q, want %q", shape.Description, "vector structure signature")
+	}
+}
+
+func TestNodeInfoShapeSerializationGolden(t *testing.T) {
+	shape := SignatureShape{
+		Type:        SignatureShapePasskey,
+		Description: "64-byte binary passkey signature",
+	}
+	node := NodeInfo{
+		Address: "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+		Signed:  true,
+		Shape:   &shape,
+	}
+	data, err := json.Marshal(node)
+	if err != nil {
+		t.Fatalf("marshaling NodeInfo: %v", err)
+	}
+	expected := `{"address":"GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF","signed":true,"shape":{"type":"passkey","description":"64-byte binary passkey signature"}}`
+	if string(data) != expected {
+		t.Errorf("NodeInfo JSON serialization mismatch:\n got: %s\nwant: %s", string(data), expected)
+	}
+}
+
+func TestDescribeSignatureShapes(t *testing.T) {
+	voidSig := xdr.ScVal{Type: xdr.ScValTypeScvVoid}
+	passkeyBytes := make([]byte, 64)
+	passkeySig := xdr.ScVal{Type: xdr.ScValTypeScvBytes, Bytes: (*xdr.ScBytes)(&passkeyBytes)}
+	mapSig := xdr.ScVal{Type: xdr.ScValTypeScvMap}
+
+	if sh := DescribeSignature(voidSig); sh.Type != SignatureShapeUnknown {
+		t.Errorf("void sig type: got %v", sh.Type)
+	}
+	if sh := DescribeSignature(passkeySig); sh.Type != SignatureShapePasskey {
+		t.Errorf("passkey sig type: got %v", sh.Type)
+	}
+	if sh := DescribeSignature(mapSig); sh.Type != SignatureShapeMap {
+		t.Errorf("map sig type: got %v", sh.Type)
+	}
+}
+
 func TestInspectSerialisesToJSON(t *testing.T) {
 	base := entryForArm(t, xdr.SorobanCredentialsTypeSorobanCredentialsAddressV2, 42)
 	entry, err := WithDelegates(base, testValidUntilLedger,
