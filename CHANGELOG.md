@@ -11,8 +11,6 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - `DescribeSignature` and `SignatureShape` allow callers and operators inspecting authorization entries or encountering uncheckable signatures to retrieve a structural description (such as passkey, map structure, or unknown) rather than reporting nothing or failing opaquely. The distinction between describing and verifying is explicitly preserved: shapes are never upgraded into verification verdicts. (#63)
 
-**Shell completions (`soroauth completions`)**
-
 - New subcommand: `soroauth completions --shell bash|zsh|fish` prints a
   completion script for that shell on stdout (`--json` wraps it with the
   shell name). The scripts complete the subcommands, each subcommand's flags,
