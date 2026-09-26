@@ -3,7 +3,6 @@ package soroauth
 import (
 	"context"
 	"fmt"
-
 	"github.com/stellar/go-stellar-sdk/xdr"
 )
 
@@ -95,15 +94,14 @@ func ExampleNewPasskeySigner() {
 
 	// Output: signer address: GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF
 }
-
-// ExampleInspect_signatureShape shows how DescribeSignature describes custom or unknown
-// account signature shapes when verification cannot check them directly.
 func ExampleInspect_signatureShape() {
-	sig := xdr.ScVal{
-		Type: xdr.ScValTypeScvVoid,
+	bytesSig := make([]byte, 32)
+	val := xdr.ScVal{
+		Type:  xdr.ScValTypeScvBytes,
+		Bytes: (*xdr.ScBytes)(&bytesSig),
 	}
-	shape := DescribeSignature(sig)
-	fmt.Printf("type: %s, description: %s\n", shape.Type, shape.Description)
-
-	// Output: type: void, description: void/empty placeholder
+	shape := DescribeSignature(val)
+	fmt.Println(shape.Type)
+	// Output:
+	// unknown
 }
