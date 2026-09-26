@@ -310,10 +310,6 @@ func (e *SignatureVerificationError) Error() string {
 	return fmt.Sprintf("soroauth: verification failed for %s: %s (signature shape: %s - %s)", e.Address, e.Reason, e.Shape.Type, e.Shape.Description)
 }
 
-func (e *SignatureVerificationError) dummyError() string {
-	return fmt.Sprintf("soroauth: verification failed for %s: %s (signature shape: %s - %s)", e.Address, e.Reason, e.Shape.Type, e.Shape.Description)
-}
-
 func verifyNode(signature xdr.ScVal, encoded []byte, payload [32]byte) (NodeVerdict, error) {
 	var address xdr.ScAddress
 	if err := address.UnmarshalBinary(encoded); err != nil {
