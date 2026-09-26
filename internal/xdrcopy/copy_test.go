@@ -29,12 +29,50 @@ func testAddress(t *testing.T, label string) xdr.ScAddress {
 	return xdr.ScAddress{Type: xdr.ScAddressTypeScAddressTypeAccount, AccountId: &accountID}
 }
 
+func FuzzCopy(f *testing.F) {
+	f.Add(mustMarshal(nil, sampleEntry(nil)))
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		var entry xdr.SorobanAuthorizationEntry
+		n, err := xdr.Unmarshal(bytes.NewReader(data), &entry)
+		if err != nil {
+			return
+		}
+		inputBytes := data[:n]
+
+		copy, err := Copy(entry)
+		if err != nil {
+			return
+		}
+
+		copyBytes, err := copy.MarshalBinary()
+		if err != nil {
+			t.Errorf("copy failed to marshal: %v", err)
+		}
+
+		if !bytes.Equal(inputBytes, copyBytes) {
+			t.Errorf("copy not byte-identical to original\n want %x\n  got %x", inputBytes, copyBytes)
+		}
+
+		if entry.Credentials.Type == xdr.SorobanCredentialsTypeSorobanCredentialsAddressV2 && entry.Credentials.AddressV2 != nil {
+			originalMarshal := mustMarshal(t, entry)
+			copy.Credentials.AddressV2.Nonce += 1
+			newOriginalMarshal := mustMarshal(t, entry)
+			if !bytes.Equal(originalMarshal, newOriginalMarshal) {
+				t.Error("copy shares memory with original: mutation affected source")
+			}
+		}
+	})
+}
+
 // sampleEntry builds an entry that exercises every kind of indirection the XDR
 // types use: a union arm behind a pointer (Credentials.AddressV2), a doubly
 // indirected slice (ScVal.Vec is **ScVec), a pointer union arm inside the
 // invocation (Function.ContractFn), and a recursive slice (SubInvocations).
 func sampleEntry(t *testing.T) xdr.SorobanAuthorizationEntry {
-	t.Helper()
+	if t != nil {
+		t.Helper()
+	}
 
 	sigVec := &xdr.ScVec{{Type: xdr.ScValTypeScvU32, U32: func() *xdr.Uint32 { v := xdr.Uint32(7); return &v }()}}
 	signature := xdr.ScVal{Type: xdr.ScValTypeScvVec, Vec: &sigVec}
