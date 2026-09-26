@@ -112,7 +112,7 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   covers the guides under `docs/` the way the README's snippets are covered.
   (#111)
 
-### Added (docs correctness)
+### Docs correctness
 
 - The README's three Go examples (Quickstart, Delegates, the inline
   `AllowResign` snippet) are now extracted verbatim, at test time, from real,
@@ -135,8 +135,6 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `@v7`. A retagged or compromised action can no longer silently gain this
   repository's CI permissions. `.github/dependabot.yml` keeps the pins
   current by opening a PR that updates the SHA and its comment together.
-
-### Added
 
 **`soroauth doctor`**
 
