@@ -14,6 +14,23 @@ import (
 	"github.com/stellar/go-stellar-sdk/xdr"
 )
 
+// TestVerifySignatureShapeBestEffort verifies that unknown or uncheckable shapes return descriptive metadata without upgrading to verification verdicts.
+func TestVerifySignatureShapeBestEffort(t *testing.T) {
+	bytesSig := make([]byte, 32)
+	unknownVal := xdr.ScVal{
+		Type:  xdr.ScValTypeScvBytes,
+		Bytes: (*xdr.ScBytes)(&bytesSig),
+	}
+
+	shape := VerifySignatureShape(unknownVal)
+	if shape.Type != SignatureShapeUnknown {
+		t.Errorf("expected unknown shape type, got %v", shape.Type)
+	}
+	if shape.Description == "" {
+		t.Error("expected non-empty shape description")
+	}
+}
+
 // signVectorEntry replays a golden vector's signing steps onto its unsigned
 // entry, so the verification tests below and golden_test.go agree on what the
 // "signed" entry for a vector is.
@@ -502,23 +519,6 @@ func TestVerifyEntryDoesNotMutateInput(t *testing.T) {
 	}
 	if !bytes.Equal(before, after) {
 		t.Errorf("VerifyEntry mutated its input\n before %x\n  after %x", before, after)
-	}
-}
-
-// TestVerifySignatureShapeBestEffort verifies that unknown or uncheckable shapes return descriptive metadata without upgrading to verification verdicts.
-func TestVerifySignatureShapeBestEffort(t *testing.T) {
-	bytesSig := make([]byte, 32)
-	unknownVal := xdr.ScVal{
-		Type:  xdr.ScValTypeScvBytes,
-		Bytes: (*xdr.ScBytes)(&bytesSig),
-	}
-
-	shape := VerifySignatureShape(unknownVal)
-	if shape.Type != SignatureShapeUnknown {
-		t.Errorf("expected unknown shape type, got %v", shape.Type)
-	}
-	if shape.Description == "" {
-		t.Error("expected non-empty shape description")
 	}
 }
 
