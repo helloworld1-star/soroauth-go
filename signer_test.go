@@ -182,9 +182,20 @@ func TestSignersHonourContextCancellation(t *testing.T) {
 		t.Fatalf("building the multi signer: %v", err)
 	}
 
+	passkeyAuthData := make([]byte, 37)
+	passkeyAuthData[32] = 0x01
+	passkeySigner := NewPasskeySigner(kp.Address(), passkeyAuthData, func(ctx context.Context, _ xdr.HashIdPreimage, _ [32]byte) (xdr.ScVal, error) {
+		if err := ctx.Err(); err != nil {
+			return xdr.ScVal{}, err
+		}
+		return scBytes([]byte("sig")),
+			nil
+	}, RequireUserPresence(true))
+
 	signers := map[string]Signer{
 		"ed25519":  NewEd25519Signer(kp),
 		"multisig": multi,
+		"passkey":  passkeySigner,
 		"func": SignerFunc(kp.Address(), func(context.Context, xdr.HashIdPreimage, [32]byte) (xdr.ScVal, error) {
 			t.Error("the callback ran despite a cancelled context")
 			return xdr.ScVal{}, nil
