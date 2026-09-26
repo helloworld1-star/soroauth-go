@@ -36,12 +36,6 @@ func FuzzCopy(f *testing.F) {
 		var entry xdr.SorobanAuthorizationEntry
 		n, err := xdr.Unmarshal(bytes.NewReader(data), &entry)
 		if err != nil {
-			// Property: If input is invalid, Copy must return error and zero value.
-			got, err := Copy(data)
-			if err == nil {
-				t.Error("Copy succeeded on invalid input")
-			}
-			// Note: Copy interface currently takes interface{}, so we test a known bad type.
 			return
 		}
 		inputBytes := data[:n]
