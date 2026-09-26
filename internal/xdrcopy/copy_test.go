@@ -17,7 +17,9 @@ import (
 // scheme every soroauth test uses. These keys are public by construction and
 // must never be funded on mainnet.
 func testAddress(t *testing.T, label string) xdr.ScAddress {
-	t.Helper()
+	if t != nil {
+		t.Helper()
+	}
 	kp, err := keypair.FromRawSeed(sha256.Sum256([]byte(label)))
 	if err != nil {
 		t.Fatalf("deriving keypair for %q: %v", label, err)
@@ -74,11 +76,17 @@ func sampleEntry(t *testing.T) xdr.SorobanAuthorizationEntry {
 		t.Helper()
 	}
 
+	// Use a non-nil helper if needed, but for fuzzing, just ensure we don't call t.Helper() on nil
+	var tOrNil *testing.T
+	if t != nil {
+		tOrNil = t
+	}
+
 	sigVec := &xdr.ScVec{{Type: xdr.ScValTypeScvU32, U32: func() *xdr.Uint32 { v := xdr.Uint32(7); return &v }()}}
 	signature := xdr.ScVal{Type: xdr.ScValTypeScvVec, Vec: &sigVec}
 
 	credentials := xdr.SorobanAddressCredentials{
-		Address:                   testAddress(t, "soroauth-xdrcopy-account"),
+		Address:                   testAddress(tOrNil, "soroauth-xdrcopy-account"),
 		Nonce:                     xdr.Int64(1234),
 		SignatureExpirationLedger: xdr.Uint32(99),
 		Signature:                 signature,
