@@ -48,6 +48,7 @@ rather than across several documents. Run `make help` for the list.
 | `make vectors-check` | regenerates the vectors and fails if the committed files changed |
 | `make e2e` | builds the test contract with `stellar-cli` and runs `go test -tags e2e -v ./e2e/...` |
 | `make parity` | installs the pinned Python SDK into `.venv-parity` and runs the parity harness and its tests |
+| `make parity-rust` | runs the Rust stellar-xdr parity harness and its tests (needs Rust 1.93.0) |
 | `make wasm` | builds the js/wasm signing core to `wasm/dist/` |
 | `make wasm-check` | builds the wasm core and replays every golden vector through it |
 | `make ts-test` | typechecks and tests the `@soroauth/wasm` TypeScript package |
@@ -120,6 +121,13 @@ by recomputing the vectors with other implementations:
   `stellar-sdk` on PyPI. `make parity` imports every vector, rebuilds the
   preimage and payload, and compares. Cases with no preimage (source-account
   entries) are skipped loudly and counted; a run that checks nothing fails.
+- **Rust** (`testdata/parity-rust/`), against the separately maintained
+  [`stellar-xdr`](https://crates.io/crates/stellar-xdr) crate, which is what
+  the Soroban host itself decodes with. `make parity-rust` recomputes every
+  vector's preimage and payload and compares; the crate is pinned exactly in
+  `Cargo.toml` and `Cargo.lock` and the harness refuses to run against another
+  version. Cases with no preimage (source-account entries) are skipped loudly
+  and counted, and a run that checks nothing fails.
 - **WebAssembly** (`wasm/parity.mjs`), against the wasm build of this same
   library. `make wasm-check` proves the browser build emits the same bytes as
   the native one.
@@ -222,12 +230,15 @@ the measurement in the body.
 
 ## Verifying README snippets compile
 
-The README's two Go examples (Quickstart, Delegates) are not free-standing
-markdown text: each is extracted verbatim from a real, compiling source file
-in `internal/readmesnippets/`, between a `// snippet:start <name>` and
-`// snippet:end <name>` comment pair. `TestReadmeSnippetsMatchTheirSource` in
-`readme_test.go` at the repository root asserts the fenced code block in
-README.md is byte-identical (modulo tabs-vs-spaces) to that marked region.
+The README's Go examples (Quickstart, Delegates, and the inline `AllowResign`
+snippet) are not free-standing markdown text: each is extracted verbatim from a
+real, compiling source file in `internal/readmesnippets/`, between a
+`// snippet:start <name>` and `// snippet:end <name>` comment pair.
+`TestReadmeSnippetsMatchTheirSource` in `readme_test.go` at the repository root
+asserts the fenced code block in README.md is byte-identical (modulo
+tabs-vs-spaces) to that marked region. The guides under `docs/` —
+`passkeys.md`, `migrating.md` — are checked the same way by
+`TestGuideSnippetsMatchTheirSource`.
 
 This means two different things can fail, and the test names which:
 
@@ -322,6 +333,18 @@ saying why, with the protocol reference — do not change it to make a test pass
 
 The generator refuses to run against any `@stellar/stellar-sdk` other than the
 pinned 17.1.0, since a vector from another build is not evidence about this one.
+
+## Shared fixture deployment harness & running e2e tests
+
+The e2e test suite provides a shared fixture deployment harness (`deployAndFundFixture` on the test `harness`) so individual contract fixtures do not reimplement deployment and funding logic.
+
+To deploy and fund any contract fixture in your own scenarios or local debugging:
+
+```go
+deployer := h.newAccount(t, "deployer")
+wasmBytes := wasmPath("modular_account")
+contractID := h.deployAndFundFixture(t, deployer, wasmBytes, constructorArgs...)
+```
 
 ## Running the e2e tests
 
