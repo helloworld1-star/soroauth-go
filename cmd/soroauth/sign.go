@@ -90,7 +90,7 @@ func runSign(args []string, stdout, stderr io.Writer, getenv func(string) string
 		return writeJSONError(stdout, *jsonFlag, newErrorf(ExitUsageError, "--valid-until is required and must be greater than zero"))
 	}
 	if (*secretEnv == "" && *assertionFlag == "") || (*secretEnv != "" && *assertionFlag != "") {
-		return writeJSONError(stdout, *jsonFlag, newErrorf(ExitUsageError, "exactly one of --secret-env or --assertion must be provided"))
+		return writeJSONError(stdout, *jsonFlag, newErrorf(ExitUsageError, "--secret-env is required unless --assertion is given: exactly one of --secret-env or --assertion must be provided"))
 	}
 
 	var signer soroauth.Signer
