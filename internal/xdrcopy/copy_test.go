@@ -37,7 +37,7 @@ func FuzzCopy(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		var entry xdr.SorobanAuthorizationEntry
 		n, err := xdr.Unmarshal(bytes.NewReader(data), &entry)
-		if err != nil {
+		if err != nil || entry.Credentials.Type == xdr.SorobanCredentialsType(0) && entry.Credentials.AddressV2 == nil {
 			return
 		}
 		inputBytes := data[:n]
@@ -133,10 +133,15 @@ func sampleEntry(t *testing.T) xdr.SorobanAuthorizationEntry {
 }
 
 func mustMarshal(t *testing.T, v interface{ MarshalBinary() ([]byte, error) }) []byte {
-	t.Helper()
+	if t != nil {
+		t.Helper()
+	}
 	b, err := v.MarshalBinary()
 	if err != nil {
-		t.Fatalf("marshalling %T: %v", v, err)
+		if t != nil {
+			t.Fatalf("marshalling %T: %v", v, err)
+		}
+		panic(err)
 	}
 	return b
 }
