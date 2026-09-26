@@ -105,5 +105,5 @@ func ExampleInspect_signatureShape() {
 	shape := DescribeSignature(sig)
 	fmt.Printf("type: %s, description: %s\n", shape.Type, shape.Description)
 
-	// Output: type: void, description: void/empty signature
+	// Output: type: void, description: void/empty placeholder
 }
