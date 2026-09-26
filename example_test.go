@@ -3,7 +3,6 @@ package soroauth
 import (
 	"context"
 	"fmt"
-
 	"github.com/stellar/go-stellar-sdk/xdr"
 )
 
@@ -94,4 +93,15 @@ func ExampleNewPasskeySigner() {
 	fmt.Printf("signer address: %s\n", signer.Address())
 
 	// Output: signer address: GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF
+}
+func ExampleInspect_signatureShape() {
+	bytesSig := make([]byte, 32)
+	val := xdr.ScVal{
+		Type:  xdr.ScValTypeScvBytes,
+		Bytes: (*xdr.ScBytes)(&bytesSig),
+	}
+	shape := DescribeSignature(val)
+	fmt.Println(shape.Type)
+	// Output:
+	// unknown
 }
