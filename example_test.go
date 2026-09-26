@@ -95,10 +95,12 @@ func ExampleNewPasskeySigner() {
 	// Output: signer address: GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF
 }
 func ExampleInspect_signatureShape() {
-	// Demonstration of DescribeSignature and SignatureShape for uncheckable signatures
 	var sig xdr.ScVal
 	shape := DescribeSignature(sig)
-	_ = shape
+	fmt.Printf("shape type: %s\n", shape.Type)
+
+	// Output:
+	// shape type: void
 }
 
 func Example_placeholder() {
