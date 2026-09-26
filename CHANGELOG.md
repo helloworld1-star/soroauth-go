@@ -7,8 +7,6 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-### Added
-
 **Offline verification**
 
 - `VerifyEntry` rebuilds the signing payload from an entry exactly as it
