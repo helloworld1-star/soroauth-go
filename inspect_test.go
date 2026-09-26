@@ -1,14 +1,16 @@
 package soroauth
 
 import (
+	"testing"
+
 	"context"
 	"encoding/json"
 	"errors"
 	"github.com/stellar/go-stellar-sdk/network"
 	"github.com/stellar/go-stellar-sdk/xdr"
+	"github.com/stretchr/testify/assert"
 	"reflect"
 	"strings"
-	"testing"
 )
 
 func TestInspectReportsTheArm(t *testing.T) {
@@ -394,23 +396,6 @@ func TestNodeInfoShapeSerializationGolden(t *testing.T) {
 	}
 }
 
-func TestDescribeSignatureShapes(t *testing.T) {
-	voidSig := xdr.ScVal{Type: xdr.ScValTypeScvVoid}
-	passkeyBytes := make([]byte, 64)
-	passkeySig := xdr.ScVal{Type: xdr.ScValTypeScvBytes, Bytes: (*xdr.ScBytes)(&passkeyBytes)}
-	mapSig := xdr.ScVal{Type: xdr.ScValTypeScvMap}
-
-	if sh := DescribeSignature(voidSig); sh.Type != SignatureShapeUnknown {
-		t.Errorf("void sig type: got %v", sh.Type)
-	}
-	if sh := DescribeSignature(passkeySig); sh.Type != SignatureShapePasskey {
-		t.Errorf("passkey sig type: got %v", sh.Type)
-	}
-	if sh := DescribeSignature(mapSig); sh.Type != SignatureShapeMap {
-		t.Errorf("map sig type: got %v", sh.Type)
-	}
-}
-
 func TestInspectSerialisesToJSON(t *testing.T) {
 	base := entryForArm(t, xdr.SorobanCredentialsTypeSorobanCredentialsAddressV2, 42)
 	entry, err := WithDelegates(base, testValidUntilLedger,
@@ -500,4 +485,24 @@ func mustParse(t *testing.T, address string) xdr.ScAddress {
 		t.Fatalf("parsing %q: %v", address, err)
 	}
 	return parsed
+}
+func TestDescribeSignatureShapes(t *testing.T) {
+	// Void signature
+	shapeVoid := DescribeSignature(xdr.ScVal{Type: xdr.ScValTypeScvVoid})
+	assert.Equal(t, SignatureShapeUnknown, shapeVoid.Type)
+
+	// Vec signature
+	vec := &xdr.ScVec{}
+	shapeVec := DescribeSignature(xdr.ScVal{Type: xdr.ScValTypeScvVec, Vec: &vec})
+	assert.Equal(t, SignatureShapeUnknown, shapeVec.Type)
+
+	// Map signature
+	m := &xdr.ScMap{}
+	shapeMap := DescribeSignature(xdr.ScVal{Type: xdr.ScValTypeScvMap, Map: &m})
+	assert.Equal(t, SignatureShapeMap, shapeMap.Type)
+
+	// Bytes signature
+	b := xdr.ScBytes([]byte{1, 2, 3})
+	shapeBytes := DescribeSignature(xdr.ScVal{Type: xdr.ScValTypeScvBytes, Bytes: &b})
+	assert.Equal(t, SignatureShapeUnknown, shapeBytes.Type)
 }
