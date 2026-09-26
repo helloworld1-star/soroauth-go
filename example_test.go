@@ -6,6 +6,37 @@ import (
 	"github.com/stellar/go-stellar-sdk/xdr"
 )
 
+func Example_placeholder() {
+	var key xdr.Uint256
+	key[0] = 1
+	accountID := xdr.AccountId{
+		Type:    xdr.PublicKeyTypePublicKeyTypeEd25519,
+		Ed25519: &key,
+	}
+	address := xdr.ScAddress{
+		Type:      xdr.ScAddressTypeScAddressTypeAccount,
+		AccountId: &accountID,
+	}
+
+	entry := xdr.SorobanAuthorizationEntry{
+		Credentials: xdr.SorobanCredentials{
+			Type: xdr.SorobanCredentialsTypeSorobanCredentialsAddress,
+			Address: &xdr.SorobanAddressCredentials{
+				Address:                   address,
+				Nonce:                     1,
+				SignatureExpirationLedger: 100,
+				Signature:                 xdr.ScVal{Type: xdr.ScValTypeScvVoid},
+			},
+		},
+	}
+
+	shape := DescribeSignature(entry.Credentials.Address.Signature)
+	fmt.Printf("shape type: %s\n", shape.Type)
+
+	// Output:
+	// shape type: void
+}
+
 // ExampleDecodeAuthorizationEntry shows the entry point for a base64 entry that
 // came from somewhere else. The limits it applies are documented on the
 // function and on MaxDecodeDepth and MaxDecodeInputBytes.
@@ -95,7 +126,7 @@ func ExampleNewPasskeySigner() {
 	// Output: signer address: GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF
 }
 
-func Example_placeholder() {
+func ExampleInspect_signatureShape() {
 	var key xdr.Uint256
 	key[0] = 1
 	accountID := xdr.AccountId{
