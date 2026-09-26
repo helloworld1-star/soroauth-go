@@ -61,7 +61,8 @@ func FuzzCopy(f *testing.F) {
 		}
 
 		originalMarshal := mustMarshal(t, entry)
-		copy.Credentials.Nonce += 1
+		// Access Nonce through the V2 arm for the test
+		copy.Credentials.AddressV2.Nonce += 1
 		newOriginalMarshal := mustMarshal(t, entry)
 		if !bytes.Equal(originalMarshal, newOriginalMarshal) {
 			t.Error("copy shares memory with original: mutation affected source")
