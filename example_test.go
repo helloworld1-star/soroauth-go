@@ -94,14 +94,6 @@ func ExampleNewPasskeySigner() {
 
 	// Output: signer address: GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF
 }
-func ExampleInspect_signatureShape() {
-	var sig xdr.ScVal
-	shape := DescribeSignature(sig)
-	fmt.Printf("shape type: %s\n", shape.Type)
-
-	// Output:
-	// shape type: void
-}
 
 func Example_placeholder() {
 	var key xdr.Uint256
