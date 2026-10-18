@@ -96,6 +96,7 @@ rather than across several documents. Run `make help` for the list.
 | Target               | What it runs                                                                                          |
 | -------------------- | ----------------------------------------------------------------------------------------------------- |
 | `make` (default)     | `fmt`, `vet` and `test`                                                                               |
+| `make ci-all`        | runs locally everything CI runs (fmt, vet, test, prettier, cspell, vectors, parity, differential, adapters, wasm), reporting skipped prerequisites with reasons |
 | `make fmt`           | fails if `gofmt -l .` reports anything                                                                |
 | `make vet`           | `go vet ./...`                                                                                        |
 | `make test`          | `go test ./...`                                                                                       |

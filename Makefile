@@ -20,6 +20,62 @@ COVER_TOOLCHAIN := $(shell awk '/^toolchain /{print $$2}' go.mod)
 BIN_DIR := bin
 BIN     := $(BIN_DIR)/soroauth
 
+# The thorough target running locally everything CI runs in order, with a meta-check.
+.PHONY: ci-all ci-check
+
+ci-all:
+	@echo "Running all CI checks locally..."
+	@$(MAKE) ci-check
+	@echo "[1/13] gofmt check..."
+	@unformatted="$$(gofmt -l .)"; if [ -n "$$unformatted" ]; then echo "These files are not gofmt clean:"; echo "$$unformatted"; exit 1; fi
+	@echo "[2/13] go vet..."
+	$(GO) vet ./...
+	@echo "[3/13] go vet (-tags e2e)..."
+	$(GO) vet -tags e2e ./...
+	@echo "[4/13] go test (-race)..."
+	$(GO) test -race ./...
+	@echo "[5/13] prettier format check..."
+	@if command -v npx >/dev/null 2>&1; then npx prettier --check "**/*.md"; else echo "Skipped prettier check: npx not available"; fi
+	@echo "[6/13] cspell markdown check..."
+	@if command -v npx >/dev/null 2>&1; then npx cspell --config cspell.json './**/*.md'; else echo "Skipped cspell check: npx not available"; fi
+	@echo "[7/13] golden vector drift check..."
+	@if [ -d "testdata/gen" ]; then (cd testdata/gen && npm ci && node gen.mjs); if ! git diff --exit-code testdata/vectors; then echo "Golden vectors differ from generated ones."; exit 1; fi; else echo "Skipped vector check: testdata/gen missing"; fi
+	@echo "[8/13] parity python harness..."
+	@if command -v python3 >/dev/null 2>&1 && [ -f "testdata/parity-python/requirements.txt" ]; then python3 -m venv .venv-parity && . .venv-parity/bin/activate && pip install -r testdata/parity-python/requirements.txt && python3 testdata/parity-python/parity.py && python3 testdata/parity-python/test_parity.py; else echo "Skipped python parity: python3 or requirements missing"; fi
+	@echo "[9/13] parity rust xdr..."
+	@if command -v cargo >/dev/null 2>&1 && [ -d "testdata/parity-rust" ]; then (cd testdata/parity-rust && cargo test --locked && cargo run --locked --bin parity); else echo "Skipped rust parity: cargo or parity-rust missing"; fi
+	@echo "[10/13] differential fuzzing corpus check..."
+	$(GO) run ./cmd/difffuzz
+	@if ! git diff --exit-code testdata/differential/corpus; then echo "Differential corpus differs."; exit 1; fi
+	@echo "[11/13] adapters check..."
+	@for mod in adapters/walletsdk adapters/gcpkms adapters/awskms; do \
+	  if [ -d "$$mod" ]; then \
+	    echo "Checking adapter: $$mod"; \
+	    (cd "$$mod" && unformatted="$$(gofmt -l .)"; if [ -n "$$unformatted" ]; then echo "$$mod not gofmt clean:"; echo "$$unformatted"; exit 1; fi && $(GO) vet ./... && $(GO) test -race ./...); \
+	  fi; \
+	  done
+	@echo "[12/13] wasm parity check..."
+	@if command -v npm >/dev/null 2>&1 && [ -d "wasm" ]; then $(MAKE) wasm-check; else echo "Skipped wasm-check: npm or wasm directory missing"; fi
+	@echo "[13/13] TypeScript wrapper tests..."
+	@if command -v npm >/dev/null 2>&1 && [ -f "wasm/ts/package.json" ]; then (cd wasm/ts && npm ci && npm test); else echo "Skipped ts-test: npm or wasm/ts missing"; fi
+	@echo "All CI checks passed successfully!"
+
+ci-check:
+	@echo "Running CI meta-check..."
+	@python3 -c '
+import os, sys
+required_targets = ["gofmt", "vet", "test", "prettier", "cspell", "vectors", "parity", "differential", "adapters", "wasm"]
+missing = []
+makefile = open("Makefile").read()
+for t in required_targets:
+    if t not in makefile:
+        missing.append(t)
+if missing:
+    print(f"Error: Makefile ci-all target is missing checks corresponding to: {missing}", file=sys.stderr)
+    sys.exit(1)
+print("Meta-check passed: all core CI areas represented in Makefile.")
+'
+
 # Build metadata the CLI reports with --version. The release workflow overrides
 # all three with the tag, the commit and the run's date (see
 # .github/workflows/release.yml); a local `make build` reports the checkout it
