@@ -1,15 +1,3 @@
-// Package opentelemetry demonstrates how to wire an
-// OpenTelemetry-style hook for soroauth signing operations.
-//
-// The hook implementation uses only the standard library
-// and the soroauth.Hook interface. Callers with a real
-// OpenTelemetry SDK can replace the stub implementations
-// with their OTel imports.
-//
-// Example usage:
-//
-//	hook := opentelemetry.NewHook("soroauth-authorize")
-//	entry, err := soroauth.AuthorizeEntry(ctx, entry, signer, ledger, passphrase, soroauth.WithHook(hook))
 package opentelemetry
 
 import (
