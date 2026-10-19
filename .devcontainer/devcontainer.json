@@ -1,0 +1,27 @@
+{
+  "name": "soroauth-go",
+  "image": "mcr.microsoft.com/devcontainers/base:debian12",
+  "initializeCommand": "node -e 'const fs=require(\"fs\"); const go=fs.readFileSync(\"go.mod\",\"utf8\").match(/^toolchain\\s+go([\\d.]+)/m)?.[1]||fs.readFileSync(\"go.mod\",\"utf8\").match(/^go\\s+([\\d.]+)/m)?.[1]; const rust=fs.readFileSync(\"rust-toolchain.toml\",\"utf8\").match(/channel\\s*=\\"([\\d.]+)\"/)?.[1]; const pkg=JSON.parse(fs.readFileSync(\"testdata/gen/package.json\",\"utf8\" )); const node=pkg.engines?.node || \"22.12.0\"; const stellarCli=pkg.devDependencies?.[\"@stellar/stellar-cli\"] || \"28.0.0\"; fs.writeFileSync(\".devcontainer/.generated-versions.json\", JSON.stringify({go, rust, node, stellarCli}))'",
+  "build.args": {},
+  "features": {
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/rust:1": {
+      "version": "latest"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.Go",
+        "rust-lang.rust-analyzer",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  },
+  "postCreateCommand": "eval \$(node -e 'const v=require(\"./.generated-versions.json\"); console.log(\"export STELLAR_CLI_VERSION=\"+v.stellarCli)') && rustup target add wasm32v1-none && cargo install stellar-cli --version \${STELLAR_CLI_VERSION} --locked || true"
+}
