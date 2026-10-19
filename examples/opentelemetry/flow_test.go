@@ -42,7 +42,7 @@ func (m *mockRPCClient) SendTransaction(_ context.Context, _ rpc.SendTransaction
 func (m *mockRPCClient) PollTransaction(context.Context, string) (rpc.GetTransactionResponse, error) {
 	return rpc.GetTransactionResponse{
 		TransactionDetails: rpc.TransactionDetails{Status: rpc.TransactionStatusSuccess, Ledger: 101},
-	},
+	}, nil
 }
 
 func TestRunFullFlowAndTelemetry(t *testing.T) {
@@ -70,13 +70,10 @@ func TestRunFullFlowAndTelemetry(t *testing.T) {
 
 	_, rootSpan, _, _ := RunFullFlow(context.Background(), client, payer, signer, op, network.TestNetworkPassphrase)
 
-	// Verify no secrets/entries/signatures in trace attributes
 	if err := AssertNoSecretsInSpan(rootSpan); err != nil {
-		// If any forbidden terms appear, fail explicitly
 		t.Fatalf("unexpected secret or forbidden term in span attributes: %v", err)
 	}
 
-	// Check that resource fee difference attribute exists
 	foundFeeDiff := false
 	var checkSpan func(s TraceSpan)
 	checkSpan = func(s TraceSpan) {

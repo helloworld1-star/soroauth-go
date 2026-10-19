@@ -21,28 +21,6 @@ type TraceSpan struct {
 	Children   []TraceSpan
 }
 
-// Hook implements soroauth.Hook to bridge signing lifecycle events into spans.
-type Hook struct {
-	Name     string
-	Children []TraceSpan
-}
-
-func NewHook(name string) *Hook {
-	return &Hook{Name: name, Children: []TraceSpan{}}
-}
-
-func (h *Hook) Event(ctx context.Context, e soroauth.HookEvent) error {
-	h.Children = append(h.Children, TraceSpan{
-		Name: fmt.Sprintf("soroauth.%s", e.Phase),
-		Attributes: map[string]string{
-			"credential_type": e.CredentialType,
-			"target_address":  e.TargetAddress,
-		},
-		Duration: e.Duration,
-	})
-	return nil
-}
-
 // RunFullFlow demonstrates instrumenting rpcflow.SignAndSubmit with telemetry hooks and tracing.
 func RunFullFlow(ctx context.Context, client rpcflow.Client, payer *keypair.Full, signer soroauth.Signer, op txnbuild.InvokeHostFunction, networkPassphrase string) (rpcflow.Submission, TraceSpan, error, *Hook) {
 	startTotal := time.Now()
@@ -50,8 +28,6 @@ func RunFullFlow(ctx context.Context, client rpcflow.Client, payer *keypair.Full
 	hk := NewHook("soroauth-full-flow")
 	hookCtx := soroauth.WithHook(hk)
 
-	// rpcflow.SignAndSubmit executes the full flow including simulation passes, signing, submission, and polling.
-	// We wrap execution with timing and hook integration.
 	params := rpcflow.Params{
 		Source:            &txnbuild.SimpleAccount{AccountID: payer.Address(), Sequence: 1},
 		Operation:         op,
@@ -62,8 +38,19 @@ func RunFullFlow(ctx context.Context, client rpcflow.Client, payer *keypair.Full
 		ValidUntilLedger:  1234567,
 	}
 
-	// Instrument record pass, signing, enforce pass via SignAndSubmit invocation
 	sub, err := rpcflow.SignAndSubmit(hookCtx, params)
+
+	var childSpans []TraceSpan
+	for _, ev := range hk.Events() {
+		childSpans = append(childSpans, TraceSpan{
+			Name: fmt.Sprintf("soroauth.%s", ev.Phase),
+			Attributes: map[string]string{
+				"credential_type": ev.CredentialType,
+				"target_address":  ev.TargetAddress,
+			},
+			Duration: ev.Duration,
+		})
+	}
 
 	rootSpan := TraceSpan{
 		Name:       "soroauth.flow.sign_and_submit",
@@ -74,7 +61,7 @@ func RunFullFlow(ctx context.Context, client rpcflow.Client, payer *keypair.Full
 			{
 				Name:     "soroauth.sign",
 				Duration: 15 * time.Millisecond,
-				Children: hk.Children,
+				Children: childSpans,
 			},
 			{
 				Name:     "soroauth.simulate.enforce",
