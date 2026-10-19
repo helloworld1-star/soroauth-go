@@ -121,7 +121,13 @@ formatting instead of printing a warning, `make vectors-check` exits non-zero
 when regeneration changes a committed vector, and `make e2e` refuses to run
 without `stellar-cli` rather than failing later with an obscure test error.
 
-The thorough `make ci-all` target runs all checks that CI performs in their exact order. Prerequisites that cannot be satisfied locally (such as optional toolchains or drivers) are explicitly reported as skipped with their reason rather than being silently passed or failing the run. Additionally, `make ci-meta-check` runs a meta-check enforcing that every check present in CI has a corresponding Makefile target, preventing the two from drifting over time.
+The thorough `make ci-all` target runs all checks that CI performs in their
+exact order. Prerequisites that cannot be satisfied locally (such as optional
+toolchains or drivers) are explicitly reported as skipped with their reason
+rather than being silently passed or failing the run. Additionally,
+`make ci-meta-check` runs a meta-check enforcing that every check present in CI
+has a corresponding Makefile target, preventing the two from drifting over
+time.
 
 ## Before you open a pull request
 
