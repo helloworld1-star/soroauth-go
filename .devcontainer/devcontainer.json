@@ -1,8 +1,7 @@
 {
   "name": "soroauth-go",
   "image": "mcr.microsoft.com/devcontainers/base:debian12",
-  "initializeCommand": "node -e 'const fs=require(\"fs\"); const go=fs.readFileSync(\"go.mod\",\"utf8\").match(/^toolchain\\s+go([\\d.]+)/m)?.[1]||fs.readFileSync(\"go.mod\",\"utf8\").match(/^go\\s+([\\d.]+)/m)?.[1]; const rust=fs.readFileSync(\"rust-toolchain.toml\",\"utf8\").match(/channel\\s*=\\"([\\d.]+)\"/)?.[1]; const pkg=JSON.parse(fs.readFileSync(\"testdata/gen/package.json\",\"utf8\" )); const node=pkg.engines?.node || \"22.12.0\"; const stellarCli=pkg.devDependencies?.[\"@stellar/stellar-cli\"] || \"28.0.0\"; fs.writeFileSync(\".devcontainer/.generated-versions.json\", JSON.stringify({go, rust, node, stellarCli}))'",
-  "build.args": {},
+  "initializeCommand": "node -e 'const fs=require(\"fs\"); const go=fs.readFileSync(\"go.mod\",\"utf8\").match(/^toolchain\\s+go([\\d.]+)/m)?.[1]||fs.readFileSync(\"go.mod\",\"utf8\").match(/^go\\s+([\\d.]+)/m)?.[1]; const rust=fs.readFileSync(\"rust-toolchain.toml\",\"utf8\").match(/channel\\s*=\\\"([\\d.]+)\\\"/)?.[1]; const pkg=JSON.parse(fs.readFileSync(\"testdata/gen/package.json\",\"utf8\")); const node=pkg.engines?.node || \"22.12.0\"; const stellarCli=pkg.devDependencies?.[\"@stellar/stellar-cli\"] || \"28.0.0\"; fs.writeFileSync(\".devcontainer/.generated-versions.json\", JSON.stringify({go, rust, node, stellarCli}))'",
   "features": {
     "ghcr.io/devcontainers/features/go:1": {
       "version": "latest"
