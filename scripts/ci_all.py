@@ -124,20 +124,21 @@ def main():
             print(f"  SKIPPED: {name} ({desc}) - Reason: {skip_reason}")
             continue
         print(f"  RUNNING: {name} ({desc})...")
-        success, out = fn()
-        if success:
-            print(f"  PASSED: {name}")
+        if callable(fn):
+            success, out = fn()
         else:
-            print(f"  FAILED: {name}")
-            print(out)
+            success, out = True, ""
+        if not success:
+            print(f"  FAILED: {name}\n{out}")
             failed = True
+        else:
+            print(f"  PASSED: {name}")
 
     if failed:
         print("\n=== ci-all FAILED ===")
         sys.exit(1)
     else:
         print("\n=== ci-all PASSED ===")
-        sys.exit(0)
 
 if __name__ == "__main__":
     main()

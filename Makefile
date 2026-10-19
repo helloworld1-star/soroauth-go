@@ -109,7 +109,6 @@ help:
 	@echo "targets:"
 	@echo "  make ci-all        run locally everything CI runs, with skip reporting and meta-check"
 	@echo "  make all           fmt, vet and test (the default)"
-	@echo "  make all           fmt, vet and test (the default)"
 	@echo "  make fmt           fail if any Go file is not gofmt-clean"
 	@echo "  make vet           go vet ./..."
 	@echo "  make test          go test ./..."
