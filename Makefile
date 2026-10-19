@@ -169,8 +169,9 @@ if unmatched:
 	fi
 	@echo "=== 7. Adapters & Parity & WASM ==="
 	@if command -v go >/dev/null 2>&1; then \
-		cd adapters/walletsdk && $(GO) vet ./... && $(GO) test ./...; \
-		cd ../awskms && $(GO) vet ./... && $(GO) test ./...; \
+		if [ -d adapters/walletsdk ]; then cd adapters/walletsdk && $(GO) vet ./... && $(GO) test ./...; cd ../..; fi; \
+		if [ -d adapters/awskms ]; then cd adapters/awskms && $(GO) vet ./... && $(GO) test ./...; cd ../..; fi; \
+		if [ -d adapters/gcpkms ]; then cd adapters/gcpkms && $(GO) vet ./... && $(GO) test ./...; cd ../..; fi; \
 	else \
 		echo "[SKIPPED] go not available for adapters"; \
 	fi
