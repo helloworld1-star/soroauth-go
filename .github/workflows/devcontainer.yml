@@ -5,9 +5,17 @@ on:
     branches: [main]
     paths:
       - '.devcontainer/**'
+      - '.github/workflows/devcontainer.yml'
+      - 'go.mod'
+      - 'package.json'
+      - 'e2e/contracts/rust-toolchain.toml'
   pull_request:
     paths:
       - '.devcontainer/**'
+      - '.github/workflows/devcontainer.yml'
+      - 'go.mod'
+      - 'package.json'
+      - 'e2e/contracts/rust-toolchain.toml'
   schedule:
     - cron: '0 8 * * 1'
   workflow_dispatch:
