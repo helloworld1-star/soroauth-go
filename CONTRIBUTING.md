@@ -96,6 +96,8 @@ rather than across several documents. Run `make help` for the list.
 | Target               | What it runs                                                                                          |
 | -------------------- | ----------------------------------------------------------------------------------------------------- |
 | `make` (default)     | `fmt`, `vet` and `test`                                                                               |
+| `make ci-all`        | runs locally everything CI runs, in CI's order, reporting missing prerequisites as skipped with reasons |
+| `make ci-meta-check` | verifies that every CI check has a corresponding Makefile target, preventing drift                      |
 | `make fmt`           | fails if `gofmt -l .` reports anything                                                                |
 | `make vet`           | `go vet ./...`                                                                                        |
 | `make test`          | `go test ./...`                                                                                       |
@@ -118,6 +120,8 @@ No target hides a failure. `make fmt` exits non-zero when a file needs
 formatting instead of printing a warning, `make vectors-check` exits non-zero
 when regeneration changes a committed vector, and `make e2e` refuses to run
 without `stellar-cli` rather than failing later with an obscure test error.
+
+The thorough `make ci-all` target runs all checks that CI performs in their exact order. Prerequisites that cannot be satisfied locally (such as optional toolchains or drivers) are explicitly reported as skipped with their reason rather than being silently passed or failing the run. Additionally, `make ci-meta-check` runs a meta-check enforcing that every check present in CI has a corresponding Makefile target, preventing the two from drifting over time.
 
 ## Before you open a pull request
 

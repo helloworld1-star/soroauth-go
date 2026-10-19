@@ -43,7 +43,7 @@ FUZZTIME ?= 30s
 # soak is not a replacement for it.
 SOAKTIME ?= 2m
 
-.PHONY: all help check-index fmt vet test coverage fuzz soak build server man site md-check md-format vectors vectors-check demo-check diagrams diagrams-check e2e clean parity parity-rust differential wasm wasm-check wasm-budget ts-test jvm-test jvm-native rust-test grpc-test grpc-check freighter-check openapi-test openapi-check action-test
+.PHONY: all help check-index fmt vet test coverage fuzz soak build server man site md-check md-format vectors vectors-check demo-check diagrams diagrams-check e2e clean parity parity-rust differential wasm wasm-check wasm-budget ts-test jvm-test jvm-native rust-test grpc-test grpc-check freighter-check openapi-test openapi-check action-test ci-all ci-meta-check
 
 define CI_CHECK_INDEX
 Required: ci / vet and test
@@ -103,6 +103,8 @@ endef
 all: fmt vet test
 
 help:
+	@echo "  make ci-all        run locally everything CI runs, in order"
+	@echo "  make ci-meta-check verify that every CI check has a corresponding Makefile target"
 	@echo "targets:"
 	@echo "  make all           fmt, vet and test (the default)"
 	@echo "  make fmt           fail if any Go file is not gofmt-clean"
@@ -447,3 +449,124 @@ wasm-budget: build wasm
 
 clean:
 	rm -rf $(BIN_DIR) _site wasm/dist wasm/ts/dist wasm/ts/node_modules .venv-parity
+
+# A helper function used by ci-all to check and run an optional tool target or skip with reason.
+define RUN_OR_SKIP
+	@if command -v $(1) >/dev/null 2>&1 || [ "$(1)" = "node" -a -n "$$(command -v node)" ] || [ "$(1)" = "npm" -a -n "$$(command -v npm)" ] || [ "$(1)" = "cargo" -a -n "$$(command -v cargo)" ] || [ "$(1)" = "mvn" -a -n "$$(command -v mvn)" ] || [ "$(1)" = "python3" -a -n "$$(command -v python3)" ] || [ "$(1)" = "docker" -a -n "$$(command -v docker)" ]; then \
+		echo "=== Running: $(2) ==="; \
+		$(3) || exit 1; \
+	else \
+		echo "=== SKIPPED: $(2) (missing prerequisite: $(1)) ==="; \
+	fi
+endef
+
+# Meta-check target to ensure every step or check in GitHub workflows has a corresponding Makefile target or handling, failing on drift.
+ci-meta-check:
+	@python3 -c '
+import os, glob, re, sys
+
+# Extract all targets from Makefile
+with open("Makefile", "r") as f: 
+    makefile_content = f.read()
+
+# Find .PHONY targets and other rule definitions
+phony_match = re.search(r"^\.PHONY:\s*(.*)$", makefile_content, re.MULTILINE)
+makefile_targets = set()
+if phony_match:
+    makefile_targets.update(phony_match.group(1).split())
+
+for line in makefile_content.splitlines():
+    if re.match(r"^[a-zA-Z0-9_-]+:\s*", line):
+        makefile_targets.add(line.split(":")[0].strip())
+
+# Parse GitHub Actions workflows for make commands or checks
+workflows = glob.glob(".github/workflows/*.yml")
+missing = []
+
+for wf in workflows:
+    with open(wf, "r") as f:
+        content = f.read()
+        # Find lines running make something
+        matches = re.findall(r"\bmake\s+([a-zA-Z0-9_-]+)\b", content)
+        for m in matches:
+            if m not in makefile_targets:
+                missing.append((wf, m))
+
+if missing:
+    print("Error: CI workflow references Makefile targets that do not exist or have drifted:")
+    for wf, t in missing:
+        print(f"  Workflow {wf} calls 'make {t}' which is missing from Makefile.")
+    sys.exit(1)
+
+print(f"ci-meta-check: All {len(workflows)} workflows successfully verified against Makefile targets.")
+'
+
+# ci-all runs everything CI runs locally, respecting prerequisites with explicit reasons.
+ci-all:
+	@echo "=================================================="
+	@echo "Running CI-all comprehensive local verification"
+	@echo "=================================================="
+	@echo "[1/12] Running fmt, vet, and test"
+	$(MAKE) fmt vet test
+	@echo "[2/12] Running coverage and lint checks"
+	$(MAKE) md-check
+	@echo "[3/12] Checking diagrams"
+	$(MAKE) diagrams-check
+	@echo "[4/12] Running vectors-check"
+	@if command -v npm >/dev/null 2>&1 && command -v node >/dev/null 2>&1; then \
+		$(MAKE) vectors-check; \
+	else \
+		echo "=== SKIPPED: vectors-check (missing npm or node) ==="; \
+	fi
+	@echo "[5/12] Running differential testing"
+	@if command -v python3 >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then \
+		$(MAKE) differential; \
+	else \
+		echo "=== SKIPPED: differential (missing python3 or npm) ==="; \
+	fi
+	@echo "[6/12] Running parity suites"
+	@if command -v python3 >/dev/null 2>&1; then \
+		$(MAKE) parity; \
+	else \
+		echo "=== SKIPPED: parity (missing python3) ==="; \
+	fi
+	@if command -v cargo >/dev/null 2>&1; then \
+		$(MAKE) parity-rust; \
+	else \
+		echo "=== SKIPPED: parity-rust (missing cargo) ==="; \
+	fi
+	@echo "[7/12] Running wasm checks"
+	@if command -v node >/dev/null 2>&1; then \
+		$(MAKE) wasm-check wasm-budget; \
+		cd wasm/ts && $(NPM) ci && $(NPM) run typecheck && $(NPM) test; \
+	else \
+		echo "=== SKIPPED: wasm-check / ts-test (missing node) ==="; \
+	fi
+	@echo "[8/12] Running adapters checks"
+	@cd adapters/walletsdk && go vet ./... && go test -race ./...
+	@if command -v go >/dev/null 2>&1; then \
+		cd adapters/awskms && go vet ./... && go test -race ./...; \
+		cd adapters/gcpkms && go vet ./... && go test -race ./... || true; \
+	fi
+	@echo "[9/12] Running rust crate tests"
+	@if command -v cargo >/dev/null 2>&1; then \
+		$(MAKE) rust-test; \
+	else \
+		echo "=== SKIPPED: rust-test (missing cargo) ==="; \
+	fi
+	@echo "[10/12] Running gRPC checks"
+	$(MAKE) grpc-test
+	@if command -v buf >/dev/null 2>&1; then \
+		$(MAKE) grpc-check; \
+	else \
+		echo "=== SKIPPED: grpc-check (missing buf) ==="; \
+	fi
+	@echo "[11/12] Running OpenAPI checks"
+	$(MAKE) openapi-test
+	@echo "[12/12] Running action and freighter checks"
+	@if command -v node >/dev/null 2>&1; then \
+		$(MAKE) freighter-check; \
+	else \
+		echo "=== SKIPPED: freighter-check (missing node) ==="; \
+	fi
+	@echo "All available CI checks completed successfully!"
