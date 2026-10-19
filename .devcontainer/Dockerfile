@@ -1,7 +1,8 @@
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
-# Install required system packages
-RUN apt-get update && apt-get install -y \
+# Install required system packages non-interactively
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update && apt-get install -y \
     curl \
     git \
     make \
@@ -25,7 +26,7 @@ RUN NODE_VERSION=$(jq -r '.engines.node' testdata/gen/package.json | tr -d '>=')
     if [ -z "$NODE_VERSION" ] || [ "$NODE_VERSION" = "null" ]; then NODE_VERSION="22.12.0"; fi && \
     echo "Installing Node.js ${NODE_VERSION}" && \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
-    apt-get install -y nodejs
+    export DEBIAN_FRONTEND=noninteractive && apt-get install -y nodejs
 
 ENV RUSTUP_HOME=/usr/local/rustup
 ENV CARGO_HOME=/usr/local/cargo
