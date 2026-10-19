@@ -130,8 +130,8 @@ ci:
 	@unformatted="$$(gofmt -l .)"; \
 	if [ -n "$$unformatted" ]; then \
 		echo "these files are not gofmt clean:"; \
-		echo "$$unformatted"; 
-		exit 1; 
+		echo "$$unformatted"; \
+		exit 1; \
 	fi
 	@echo "=== Step 2: go vet ./... ==="
 	$(GO) vet ./...
