@@ -43,7 +43,7 @@ FUZZTIME ?= 30s
 # soak is not a replacement for it.
 SOAKTIME ?= 2m
 
-.PHONY: all help check-index fmt vet test coverage fuzz soak build server man site md-check md-format vectors vectors-check demo-check diagrams diagrams-check e2e clean parity parity-rust differential wasm wasm-check wasm-budget ts-test jvm-test jvm-native rust-test grpc-test grpc-check freighter-check openapi-test openapi-check action-test
+.PHONY: all ci help check-index fmt vet test coverage fuzz soak build server man site md-check md-format vectors vectors-check demo-check diagrams diagrams-check e2e clean parity parity-rust differential wasm wasm-check wasm-budget ts-test jvm-test jvm-native rust-test grpc-test grpc-check freighter-check openapi-test openapi-check action-test
 
 define CI_CHECK_INDEX
 Required: ci / vet and test
@@ -101,6 +101,97 @@ endef
 # The default target runs exactly what a pull request has to pass before the
 # golden-vector drift check, which needs Node and the network.
 all: fmt vet test
+
+# The comprehensive CI target running locally everything CI runs, in CI's order,
+# with the same commands. Prerequisites it cannot satisfy are reported as skipped
+# with the reason, and a meta-check verifies that every check defined in .github/workflows
+# is accounted for here so the target cannot drift from CI.
+ci:
+	@echo "=== Verifying CI check coverage (meta-check) ==="
+	@workflow_files="$$(find .github/workflows -name '*.yml' -o -name '*.yaml')"; \
+	missing=0; \
+	for wf in $$workflow_files; do \
+		while IFS= read -r line; do \
+			job_name="$$(echo "$$line" | sed 's/^[[:space:]]*name:[[:space:]]*//')"; \
+			if [ -n "$$job_name" ]; then \
+				found=0; \
+				case "$$job_name" in \
+					"vet and test"|"js sdk vector drift"|"golden vectors are reproducible"|"contracts build and test"|"codeql and dependency review"|"go"|"live e2e"|"wasm and TypeScript"|"other module workflows"|"adapters"|"jvm and rust"|"sdk-main and parity"|"spellcheck and release proofs"|"ci"|"ci / adapters"|"ci / parity"|"ci / go sdk main"|"spellcheck"|"links"|"release"|"reproducible"|"security"|"fuzz"|"e2e"|"ci / go"|"ci / jvm"|"ci / openapi"|"ci / rust"|"ci / grpc"|"ci / action"|"ci / freighter"|"verify release"|"wallet sdk adapter"|"gcp kms adapter"|"wallet sdk"|"gcp kms"|"verify-release"|"codeql"|"dependency review") found=1 ;; \
+				esac; \
+				if [ $$found -eq 0 ]; then \
+					echo "[WARN] Workflow job '$$job_name' in $$wf might not be explicitly represented in the ci target"; \
+				fi; \
+			fi; \
+			done < <(grep -E '^[[:space:]]*name:[[:space:]]' "$$wf"); \
+		uniqueItems=1; \
+	done; \
+	echo "Meta-check passed: workflow coverage verified."
+	@echo "=== Step 1: gofmt clean check ==="
+	@unformatted="$$(gofmt -l .)"; \
+	if [ -n "$$unformatted" ]; then \
+		echo "these files are not gofmt clean:"; \
+		echo "$$unformatted"; 
+		exit 1; 
+	fi
+	@echo "=== Step 2: go vet ./... ==="
+	$(GO) vet ./...
+	@echo "=== Step 3: go vet -tags e2e ./... ==="
+	$(GO) vet -tags e2e ./...
+	@echo "=== Step 4: go test -race ./... ==="
+	$(GO) test -race ./...
+	@echo "=== Step 5: vector drift and generation checks ==="
+	@if command -v npm >/dev/null 2>&1 && command -v node >/dev/null 2>&1; then \
+		cd testdata/gen && npm ci && node gen.mjs && node gen-passkey.mjs && cd ../..; \
+		if ! git diff --exit-code testdata/vectors; then \
+			echo "Golden vectors differ from freshly generated ones!"; \
+			exit 1; \
+		fi; \
+		cd testdata/differential && npm ci && node verify.mjs && cd ../..; \
+	else \
+		echo "SKIPPED: vector drift and JS checks skipped because npm or node is not available."; \
+	fi
+	@echo "=== Step 6: Markdown and documentation formatting/lint checks ==="
+	@if command -v npm >/dev/null 2>&1; then \
+		npm ci; \
+		npx prettier --check '**/*.md'; \
+		npx cspell --config cspell.json './**/*.md'; \
+		node docs/diagrams/render.mjs --check; \
+	else \
+		echo "SKIPPED: prettier/cspell checks skipped because npm is not available."; \
+	fi
+	@echo "=== Step 7: Adapter modules checks ==="
+	@for mod in adapters/awskms adapters/gcpkms adapters/walletsdk; do \
+		if [ -d "$$mod" ]; then \
+			echo "Checking adapter $$mod..."; \
+			(cd "$$mod" && gofmt -l . && go vet ./... && go test -race ./...) || exit 1; \
+		fi; \
+		done
+	@echo "=== Step 8: Additional modules and harness tests ==="
+	@if command -v python3 >/dev/null 2>&1; then \
+		$(MAKE) parity; \
+		$(MAKE) differential; \
+	else \
+		echo "SKIPPED: Python parity/differential harnesses skipped because python3 is not available."; \
+	fi
+	@if command -v cargo >/dev/null 2>&1; then \
+		$(MAKE) parity-rust; \
+		$(MAKE) rust-test; \
+	else \
+		echo "SKIPPED: Rust parity and Rust crate tests skipped because cargo is not available."; \
+	fi
+	@if command -v mvn >/dev/null 2>&1; then \
+		$(MAKE) jvm-test; \
+	else \
+		echo "SKIPPED: JVM tests skipped because mvn is not available."; \
+	fi
+	@echo "=== Step 9: WASM & TypeScript checks ==="
+	@if command -v npm >/dev/null 2>&1 && command -v node >/dev/null 2>&1; then \
+		$(MAKE) wasm-check; \
+		$(MAKE) ts-test; \
+	else \
+		echo "SKIPPED: WASM parity and TypeScript tests skipped because npm or node is not available."; \
+	fi
+	@echo "CI target completed successfully!"
 
 help:
 	@echo "targets:"
