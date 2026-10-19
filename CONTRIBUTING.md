@@ -68,8 +68,8 @@ That is the whole setup for the library and CLI. Go 1.25.0 or later.
 Alternatively, an optional **devcontainer** configuration is provided in
 `.devcontainer/` for use in VS Code or GitHub Codespaces. It comes
 pre-configured with Go, Node, Rust, and `stellar-cli` at the repository's
-pinned versions, allowing all local and e2e targets to run out of the box from a
-clean start. It is offered as a convenience option and does not replace the
+pinned versions, allowing all local and e2e targets to run out of the box from
+a clean start. It is offered as a convenience option and does not replace the
 standard local setup instructions.
 
 The pinned `github.com/stellar/go-stellar-sdk` version and the policy for moving
