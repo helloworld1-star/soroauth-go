@@ -1,0 +1,35 @@
+name: devcontainer
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.devcontainer/**'
+      - '.github/workflows/devcontainer.yml'
+  pull_request:
+    paths:
+      - '.devcontainer/**'
+      - '.github/workflows/devcontainer.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build devcontainer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build devcontainer image
+        uses: docker/build-push-action@v5
+        with:
+          context: .devcontainer
+          push: false
+          load: true
+          tags: soroauth-devcontainer:latest
+      - name: Test devcontainer make targets including e2e
+        run: |
+          docker run --rm soroauth-devcontainer:latest bash -c "make && make vectors-check && make e2e"
