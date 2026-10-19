@@ -93,10 +93,10 @@ Two optional pieces need more:
 The Makefile wraps the common tasks, so the commands below exist in one place
 rather than across several documents. Run `make help` for the list.
 
-| Target               | What it runs                                                                                          |
+| Target               | What it runs                                                                                  |
 | -------------------- | ----------------------------------------------------------------------------------------------------- |
 | `make` (default)     | `fmt`, `vet` and `test`                                                                               |
-| `make ci`            | runs locally everything CI runs, in CI's order, with a meta-check and skipped prerequisite reporting  |
+| `make ci`            | runs locally everything CI runs, in CI's order, with a meta-check and skipped prerequisite reporting|
 | `make fmt`           | fails if `gofmt -l .` reports anything                                                                |
 | `make vet`           | `go vet ./...`                                                                                        |
 | `make test`          | `go test ./...`                                                                                       |
