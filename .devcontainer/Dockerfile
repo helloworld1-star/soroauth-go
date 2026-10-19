@@ -28,6 +28,6 @@ RUN set -ex; \
 
 ENV PATH=/opt/cargo/bin:${PATH}
 
-RUN cargo install --locked --version 28.0.0 stellar-cli --no-default-features --features ssl
+RUN cargo install --locked --version 28.0.0 stellar-cli
 
 WORKDIR /workspace
