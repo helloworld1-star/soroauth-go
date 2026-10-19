@@ -43,7 +43,7 @@ FUZZTIME ?= 30s
 # soak is not a replacement for it.
 SOAKTIME ?= 2m
 
-.PHONY: all ci-all help check-index fmt vet test coverage fuzz soak build server man site md-check md-format vectors vectors-check demo-check diagrams diagrams-check e2e clean parity parity-rust differential wasm wasm-check wasm-budget ts-test jvm-test jvm-native rust-test grpc-test grpc-check freighter-check openapi-test openapi-check action-test
+.PHONY: all help check-index ci-all fmt vet test coverage fuzz soak build server man site md-check md-format vectors vectors-check demo-check diagrams diagrams-check e2e clean parity parity-rust differential wasm wasm-check wasm-budget ts-test jvm-test jvm-native rust-test grpc-test grpc-check freighter-check openapi-test openapi-check action-test
 
 define CI_CHECK_INDEX
 Required: ci / vet and test
@@ -103,11 +103,10 @@ endef
 all: fmt vet test
 
 ci-all:
-	@python3 scripts/ci_all.py
+	@$(GO) run ./scripts/ci_runner.go
 
 help:
 	@echo "targets:"
-	@echo "  make ci-all        run locally everything CI runs, with skip reporting and meta-check"
 	@echo "  make all           fmt, vet and test (the default)"
 	@echo "  make fmt           fail if any Go file is not gofmt-clean"
 	@echo "  make vet           go vet ./..."

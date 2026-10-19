@@ -28,7 +28,7 @@ the section that explains it.
 - [ ] **6. Never hand-edit a golden vector.** If your change moves the bytes,
       regenerate with `make vectors` and say in the commit body which CAP
       requires the move — see [Golden vectors](#golden-vectors).
-- [ ] **7. Run `make ci-all`** — runs locally everything CI runs, in CI's order and with the same commands, reporting any missing tool prerequisites as skipped with reasons rather than silently passing. If you touched any
+- [ ] **7. Run `make`** — that is `fmt`, `vet` and `test`. If you touched any
       Markdown, also run `npx prettier --write '**/*.md'`, because the build
       checks it. `golangci-lint run ./...` is a local gate worth running too —
       see [Before you open a pull request](#before-you-open-a-pull-request) and
@@ -95,8 +95,8 @@ rather than across several documents. Run `make help` for the list.
 
 | Target               | What it runs                                                                                          |
 | -------------------- | ----------------------------------------------------------------------------------------------------- |
-| `make ci-all`        | runs locally everything CI runs, in CI's order, with skip reporting and a workflow meta-check         |
 | `make` (default)     | `fmt`, `vet` and `test`                                                                               |
+| `make ci-all`        | runs locally everything CI runs, in CI's order, with the same commands                                |
 | `make fmt`           | fails if `gofmt -l .` reports anything                                                                |
 | `make vet`           | `go vet ./...`                                                                                        |
 | `make test`          | `go test ./...`                                                                                       |
@@ -114,11 +114,12 @@ rather than across several documents. Run `make help` for the list.
 | `make wasm-check`    | builds the wasm core and replays every golden vector through it                                       |
 | `make ts-test`       | typechecks and tests the `@soroauth/wasm` TypeScript package                                          |
 | `make clean`         | removes `bin/`, the wasm build output and the parity venv                                             |
+| `make ci-all`        | runs locally everything CI runs, in CI's order, with the same commands                                |
 
 No target hides a failure. `make fmt` exits non-zero when a file needs
 formatting instead of printing a warning, `make vectors-check` exits non-zero
 when regeneration changes a committed vector, and `make e2e` refuses to run
-without `stellar-cli` rather than failing later with an obscure test error. `make ci-all` explicitly reports any unsatisfied prerequisites (such as missing optional toolchains or binaries) as skipped with a reason, preventing silent bypasses, and performs a meta-check against `.github/workflows/` to ensure no CI checks drift.
+without `stellar-cli` rather than failing later with an obscure test error.
 
 ## Before you open a pull request
 
