@@ -65,6 +65,8 @@ go test ./...
 
 That is the whole setup for the library and CLI. Go 1.25.0 or later.
 
+Alternatively, you can open the repository in a **Dev Container** (in VS Code) or via **GitHub Codespaces**. The devcontainer automatically configures Go, Node, Rust, and `stellar-cli` at the exact repository-pinned versions, allowing you to run `make`, `make vectors`, and `make e2e` from a clean start without manual toolchain installations.
+
 The pinned `github.com/stellar/go-stellar-sdk` version and the policy for moving
 it live in [docs/sdk-support.md](docs/sdk-support.md).
 

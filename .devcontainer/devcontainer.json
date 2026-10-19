@@ -1,0 +1,18 @@
+{
+  "name": "soroauth",
+  "image": "mcr.microsoft.com/devcontainers/base:debian-12",
+  "initializeCommand": "goVersion=$(grep '^go ' go.mod | awk '{print $2}'); nodeVersion=$(node -p 'require(\"./testdata/gen/package.json\").engines.node' 2>/dev/null || node -p 'require(\"./package.json\").engines.node' 2>/dev/null || echo '22.12.0'); rustVersion=$(grep '^channel' rust-toolchain.toml | cut -d'\"' -f2); stellarVersion=$(grep -oP 'stellar-cli v\\K[0-9.]+' CONTRIBUTING.md 2>/dev/null || echo '28.0.0'); jq -n --arg go \"$goVersion\" --arg node \"$nodeVersion\" --arg rust \"$rustVersion\" --arg stellar \"$stellarVersion\" '{features: {\"ghcr.io/devcontainers/features/go:1\": {version: $go}, \"ghcr.io/devcontainers/features/node:1\": {version: $node}, \"ghcr.io/devcontainers/features/rust:1\": {version: $rust}}, postCreateCommand: \"cargo install --version \" + $stellar + \" stellar-cli --locked || cargo install --version \" + $stellar + \" stellar-cli\"}' > .devcontainer/generated-devcontainer.json",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "rust-lang.rust-analyzer",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint"
+      ]
+    }
+  }
+}
