@@ -1,0 +1,15 @@
+{
+  "name": "soroauth-go",
+  "dockerFile": "Dockerfile",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.Go",
+        "rust-lang.rust-analyzer",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint"
+      ]
+    }
+  },
+  "postCreateCommand": "go version && rustc --version && stellar --version && npm --version"
+}

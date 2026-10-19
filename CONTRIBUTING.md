@@ -65,6 +65,10 @@ go test ./...
 
 That is the whole setup for the library and CLI. Go 1.25.0 or later.
 
+### Devcontainer / GitHub Codespaces (Optional)
+
+An optional container configuration is provided in `.devcontainer/` for contributors who prefer a pre-configured environment with Go, Node, Rust (1.93.0), and `stellar-cli` (28.0.0) pre-installed at the repository's pinned versions. You can open the repository in VS Code Dev Containers or GitHub Codespaces as an alternative to local toolchain installation. Local instructions remain fully supported and required as the primary development path.
+
 The pinned `github.com/stellar/go-stellar-sdk` version and the policy for moving
 it live in [docs/sdk-support.md](docs/sdk-support.md).
 
