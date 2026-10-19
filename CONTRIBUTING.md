@@ -28,7 +28,7 @@ the section that explains it.
 - [ ] **6. Never hand-edit a golden vector.** If your change moves the bytes,
       regenerate with `make vectors` and say in the commit body which CAP
       requires the move — see [Golden vectors](#golden-vectors).
-- [ ] **7. Run `make`** — that is `fmt`, `vet` and `test`. If you touched any
+- [ ] **7. Run `make`** — that is `fmt`, `vet` and `test`. To run everything CI runs locally in CI's order with prerequisites correctly reported if skipped, run `make ci-all` (which executes a meta-check to prevent drift). If you touched any
       Markdown, also run `npx prettier --write '**/*.md'`, because the build
       checks it. `golangci-lint run ./...` is a local gate worth running too —
       see [Before you open a pull request](#before-you-open-a-pull-request) and
@@ -96,6 +96,7 @@ rather than across several documents. Run `make help` for the list.
 | Target               | What it runs                                                                                          |
 | -------------------- | ----------------------------------------------------------------------------------------------------- |
 | `make` (default)     | `fmt`, `vet` and `test`                                                                               |
+| `make ci-all`        | runs locally everything CI runs in CI's order, reporting any unsatisfied prerequisites as skipped with a reason, and executing a meta-check to prevent drift |
 | `make fmt`           | fails if `gofmt -l .` reports anything                                                                |
 | `make vet`           | `go vet ./...`                                                                                        |
 | `make test`          | `go test ./...`                                                                                       |

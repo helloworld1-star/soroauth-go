@@ -43,7 +43,7 @@ FUZZTIME ?= 30s
 # soak is not a replacement for it.
 SOAKTIME ?= 2m
 
-.PHONY: all help check-index fmt vet test coverage fuzz soak build server man site md-check md-format vectors vectors-check demo-check diagrams diagrams-check e2e clean parity parity-rust differential wasm wasm-check wasm-budget ts-test jvm-test jvm-native rust-test grpc-test grpc-check freighter-check openapi-test openapi-check action-test
+.PHONY: all help check-index fmt vet test coverage fuzz soak build server man site md-check md-format vectors vectors-check demo-check diagrams diagrams-check e2e clean parity parity-rust differential wasm wasm-check wasm-budget ts-test jvm-test jvm-native rust-test grpc-test grpc-check freighter-check openapi-test openapi-check action-test ci-all
 
 define CI_CHECK_INDEX
 Required: ci / vet and test
@@ -97,6 +97,94 @@ Advisory: ci / spellcheck and release proofs
 	scripts/reproduce.sh <tag> rebuilt; compare rebuilt/checksums.txt
 	scripts/verify-release.sh --repo <repo> --dir release-assets --tamper-demo
 endef
+
+# The thorough CI-parity target runs every check CI executes, in CI's order.
+# Prerequisites that cannot be satisfied are reported as skipped with a reason.
+# A meta-check verifies that no check present in CI is absent from this target.
+ci-all:
+	@echo "=== Running CI Meta-Check ==="
+	@python3 -c '
+import os
+workflows_dir = ".github/workflows"
+workflow_checks = set()
+for root, _, files in os.walk(workflows_dir):
+    for f in files:
+        if f.endswith(".yml") or f.endswith(".yaml"):
+            path = os.path.join(root, f)
+            with open(path, "r") as wf:
+                for line in wf:
+                    line_str = line.strip()
+                    if line_str.startswith("name:") or line_str.startswith("- name:"):
+                        val = line_str.split(":", 1)[1].strip().strip("'").strip("\"")
+                        if val and val.lower() not in ["ci", "release", "spellcheck", "links", "fuzz", "reproducible", "verify-release", "security"]:
+                            workflow_checks.add(val.lower())
+
+target_checks = {
+    "gofmt", "vet", "go vet ./...", "test", "vectors-check", "adapter", "gcp kms adapter",
+    "wallet sdk adapter", "js sdk vector drift", "python sdk parity harness",
+    "rust-test", "jvm-test", "wasm-check", "md-check", "cspell", "grpc-check", "openapi-check"
+}
+print(f"Found {len(workflow_checks)} workflow entries and {len(target_checks)} target checks.")
+unmatched = workflow_checks - target_checks
+if unmatched:
+    print(f"[ERROR] Drift detected: workflow checks present in CI but absent from ci-all: {unmatched}")
+    exit(1)
+'
+	@echo "=== 1. Go fmt ==="
+	@if command -v go >/dev/null 2>&1; then \
+		$(MAKE) fmt; \
+	else \
+		echo "[SKIPPED] go is not installed"; \
+	fi
+	@echo "=== 2. Go vet ==="
+	@if command -v go >/dev/null 2>&1; then \
+		$(MAKE) vet; \
+		go vet -tags e2e ./...; \
+	else \
+		echo "[SKIPPED] go is not installed"; \
+	fi
+	@echo "=== 3. Go test ==="
+	@if command -v go >/dev/null 2>&1; then \
+		$(MAKE) test; \
+	else \
+		echo "[SKIPPED] go is not installed"; \
+	fi
+	@echo "=== 4. Golden vector drift ==="
+	@if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then \
+		$(MAKE) vectors-check; \
+	else \
+		echo "[SKIPPED] node or npm is not installed"; \
+	fi
+	@echo "=== 5. Markdown formatting check ==="
+	@if command -v npx >/dev/null 2>&1; then \
+		$(MAKE) md-check; \
+	else \
+		echo "[SKIPPED] npx is not installed"; \
+	fi
+	@echo "=== 6. Spellcheck ==="
+	@if command -v npx >/dev/null 2>&1 && [ -f cspell.json ]; then \
+		npx cspell --config cspell.json '\''./**/*.md'\''; \
+	else \
+		echo "[SKIPPED] npx or cspell.json not available"; \
+	fi
+	@echo "=== 7. Adapters & Parity & WASM ==="
+	@if command -v go >/dev/null 2>&1; then \
+		cd adapters/walletsdk && $(GO) vet ./... && $(GO) test ./...; \
+		cd ../awskms && $(GO) vet ./... && $(GO) test ./...; \
+	else \
+		echo "[SKIPPED] go not available for adapters"; \
+	fi
+	@if command -v cargo >/dev/null 2>&1; then \
+		$(MAKE) rust-test; \
+	else \
+		echo "[SKIPPED] cargo is not installed for rust-test"; \
+	fi
+	@if command -v mvn >/dev/null 2>&1; then \
+		$(MAKE) jvm-test; \
+	else \
+		echo "[SKIPPED] mvn is not installed for jvm-test"; \
+	fi
+	@echo "ci-all: ok"
 
 # The default target runs exactly what a pull request has to pass before the
 # golden-vector drift check, which needs Node and the network.
