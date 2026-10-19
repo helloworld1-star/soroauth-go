@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/stellar/go-stellar-sdk/keypair"
-	rpc "github.com/stellar/go-stellar-sdk/protocols/rpc"
 	"github.com/stellar/go-stellar-sdk/txnbuild"
 
 	"github.com/soroauth/soroauth-go"
@@ -26,7 +25,7 @@ func RunFullFlow(ctx context.Context, client rpcflow.Client, payer *keypair.Full
 	startTotal := time.Now()
 
 	hk := NewHook("soroauth-full-flow")
-	hookCtx := soroauth.WithHook(hk)
+	ctxWithHook := soroauth.WithHook(hk)(ctx)
 
 	params := rpcflow.Params{
 		Source:            &txnbuild.SimpleAccount{AccountID: payer.Address(), Sequence: 1},
@@ -38,7 +37,7 @@ func RunFullFlow(ctx context.Context, client rpcflow.Client, payer *keypair.Full
 		ValidUntilLedger:  1234567,
 	}
 
-	sub, err := rpcflow.SignAndSubmit(hookCtx, params)
+	sub, err := rpcflow.SignAndSubmit(ctxWithHook, params)
 
 	var childSpans []TraceSpan
 	for _, ev := range hk.Events() {
