@@ -12,8 +12,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     jq \
     && rm -rf /var/lib/apt/lists/*
 
-COPY . /workspace
 WORKDIR /workspace
+COPY . /workspace
 
 # Install Go, Node, Rust, and stellar-cli dynamically from repository pins
 RUN GO_VERSION=$(grep '^go ' go.mod | awk '{print $2}') && \
@@ -22,7 +22,7 @@ RUN GO_VERSION=$(grep '^go ' go.mod | awk '{print $2}') && \
 
 ENV PATH=/usr/local/go/bin:${PATH}
 
-RUN NODE_VERSION=$(jq -r '.engines.node' testdata/gen/package.json | tr -d '>=') && \
+RUN NODE_VERSION=$(jq -r '.engines.node' testdata/gen/package.json | tr -d '>=^~') && \
     if [ -z "$NODE_VERSION" ] || [ "$NODE_VERSION" = "null" ]; then NODE_VERSION="22.12.0"; fi && \
     echo "Installing Node.js ${NODE_VERSION}" && \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
