@@ -10,6 +10,13 @@ this project adheres to
 
 ### Added
 
+- Add `make ci-local`, a target that runs everything CI runs, in CI's order, by
+  reading the `run:` steps out of `.github/workflows` so the commands cannot
+  drift from CI's. A job whose tool is missing, or that cannot run on a laptop,
+  is reported as skipped with the reason and never passed silently;
+  `go test ./scripts/cilocal` fails when a workflow gains a job or step that
+  `scripts/cilocal/manifest.json` does not classify. (#423)
+
 - Audit where key material is held, in `docs/signers.md`. The finding is that
   nothing in the library is zeroed, and for the CLI's `--secret-env` path
   nothing can be: `os.Getenv` returns an immutable string, so there is no
