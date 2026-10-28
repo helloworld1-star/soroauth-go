@@ -72,8 +72,9 @@ Two optional pieces need more:
   `@stellar/stellar-sdk@17.1.0` declares).
 - **Running the e2e tests** needs Rust 1.93.0 (pinned in
   `e2e/contracts/rust-toolchain.toml`, rustup will fetch it) and `stellar-cli`
-  28.0.0. See [the fixture contract quickstart](docs/fixture-quickstart.md) for
-  a step-by-step build and deploy guide from a clean checkout.
+  28.0.0 (pinned in `e2e/contracts/stellar-cli.version`). See
+  [the fixture contract quickstart](docs/fixture-quickstart.md) for a
+  step-by-step build and deploy guide from a clean checkout.
 - **Working on the wallet SDK adapter** (`adapters/walletsdk`) needs nothing
   extra, but it is a module of its own with its own test loop; run
   `cd adapters/walletsdk && go test ./...`.
@@ -85,6 +86,26 @@ Two optional pieces need more:
   same 22+ the rest of the tooling uses). `make wasm-check` builds the module
   and proves it byte-identical to the golden vectors; `make ts-test` typechecks
   and tests the wrapper package.
+
+### Dev container (optional)
+
+If you would rather not install those toolchains, `.devcontainer` describes a
+container with Go, Node, Rust and `stellar-cli` already installed, for VS Code's
+Dev Containers or GitHub Codespaces. It is an option, not required: the local
+instructions above stay the reference, and nothing here assumes you use it.
+
+Its versions are never typed into the container's files. `go.mod`, the
+`rust-toolchain.toml` files, `testdata/gen/package.json` (Node's `engines`) and
+`e2e/contracts/stellar-cli.version` are read when the image is built, so
+changing a pin changes the container, and every download is checked against a
+published or committed checksum. When you bump `stellar-cli`, update
+`e2e/contracts/stellar-cli.sha256` with the new release's sums for both Linux
+architectures. `bash .devcontainer/verify.sh` inside the container checks that
+every tool is the pinned version and that `make`, `make vectors-check` and the
+build half of `make e2e` work from a clean start (the e2e scenarios themselves
+need testnet). The `ci / devcontainer` workflow builds the container and runs
+that script when a pin or the container changes, and weekly, so it cannot rot
+silently.
 
 ## Make targets
 

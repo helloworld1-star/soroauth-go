@@ -1,0 +1,12 @@
+# The build context is the repository root, so this keeps it to the files the
+# Dockerfile copies: the pin files and the two install scripts.
+*
+!go.mod
+!testdata/gen/package.json
+!e2e/contracts/rust-toolchain.toml
+!e2e/contracts/stellar-cli.version
+!e2e/contracts/stellar-cli.sha256
+!bindings/rust/rust-toolchain.toml
+!testdata/parity-rust/rust-toolchain.toml
+!.devcontainer/pins.sh
+!.devcontainer/install-toolchains.sh
