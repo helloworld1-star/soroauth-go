@@ -19,6 +19,7 @@
     "ci-image.yml",
     "ci-packaging.yml",
     "ci-sdk-main.yml",
+    "ci-devcontainer.yml",
     "e2e.yml",
     "fuzz.yml",
     "cost-report.yml",
@@ -138,6 +139,7 @@
     "ci-packaging.yml/nix": { "requires": ["nix", "jq"], "os": ["linux", "darwin"] },
 
     "ci-sdk-main.yml/sdk-main": { "skip": "runs `go get github.com/stellar/go-stellar-sdk@main`, which rewrites go.mod and go.sum; run those steps by hand in a throwaway checkout" },
+    "ci-devcontainer.yml/devcontainer": { "requires": ["npx", "docker"], "os": ["linux", "darwin"] },
 
     "e2e.yml/e2e": { "skip": "scheduled or by hand: submits live transactions to Stellar testnet and files an issue on a regression; `make e2e` is the manual equivalent" },
     "e2e.yml/e2e-local": { "skip": "by hand only: needs a local Stellar quickstart container and stellar-cli; `make e2e-local` is the manual equivalent" },
