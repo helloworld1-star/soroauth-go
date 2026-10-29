@@ -10,12 +10,14 @@ this project adheres to
 
 ### Added
 
-- Add `make ci-local`, a target that runs everything CI runs, in CI's order, by
-  reading the `run:` steps out of `.github/workflows` so the commands cannot
-  drift from CI's. A job whose tool is missing, or that cannot run on a laptop,
-  is reported as skipped with the reason and never passed silently;
-  `go test ./scripts/cilocal` fails when a workflow gains a job or step that
-  `scripts/cilocal/manifest.json` does not classify. (#423)
+- Add an optional dev container (`.devcontainer`) with Go, Node, Rust and
+  `stellar-cli` at the versions the repository pins, for VS Code Dev Containers
+  and GitHub Codespaces. The versions are read from `go.mod`, the
+  `rust-toolchain.toml` files, the vector generator's `package.json` and the new
+  `e2e/contracts/stellar-cli.version`, never restated, and every download is
+  checksum-verified. The `ci / devcontainer` workflow builds it and checks the
+  tools and `make`, `make vectors-check` and the build half of `make e2e` inside
+  it. (#421)
 
 - Audit where key material is held, in `docs/signers.md`. The finding is that
   nothing in the library is zeroed, and for the CLI's `--secret-env` path
