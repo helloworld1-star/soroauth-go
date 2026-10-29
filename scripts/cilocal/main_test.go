@@ -414,8 +414,11 @@ jobs:
 }
 
 func TestWindowsBashLookupPrefersGitBashOverTheWSLLauncher(t *testing.T) {
-	env := map[string]string{"ProgramFiles": `C:\Program Files`, "LocalAppData": `C:\Users\u\AppData\Local`}
-	got := gitBashCandidates(`C:\Program Files\Git\cmd\git.exe`, func(k string) string { return env[k] })
+	// Built with filepath.Join so the test means the same on every host; the
+	// lookup itself only ever runs on Windows.
+	programFiles := filepath.Join("C:", "Program Files")
+	env := map[string]string{"ProgramFiles": programFiles, "LocalAppData": filepath.Join("C:", "Users", "u", "AppData", "Local")}
+	got := gitBashCandidates(filepath.Join(programFiles, "Git", "cmd", "git.exe"), func(k string) string { return env[k] })
 
 	if len(got) == 0 || !strings.HasSuffix(filepath.ToSlash(got[0]), "/bin/bash.exe") || !strings.Contains(filepath.ToSlash(got[0]), "Git") {
 		t.Fatalf("the bash beside git must be tried first, got %v", got)

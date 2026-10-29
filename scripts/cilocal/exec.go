@@ -55,7 +55,7 @@ func gitBashCandidates(gitPath string, getenv func(string) string) []string {
 // isWSLLauncher reports whether a bash.exe path is the System32 launcher for
 // WSL, which fails when no distribution is installed.
 func isWSLLauncher(path string) bool {
-	return strings.Contains(strings.ToLower(filepath.ToSlash(path)), "/system32/")
+	return strings.Contains(strings.ToLower(strings.ReplaceAll(path, `\`, "/")), "/system32/")
 }
 
 // Status is what happened to one job.
