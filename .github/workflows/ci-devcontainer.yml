@@ -1,0 +1,51 @@
+name: ci / devcontainer
+
+# Builds the optional dev container and checks it against the repository's
+# pins. A dev container nobody builds rots without anyone noticing, which is
+# worse than none, so this runs whenever something it reads changes (a pin
+# file, the container's own files, the Makefile) and weekly, to catch the base
+# image or an upstream download moving underneath it.
+#
+# Advisory, like the other path-filtered workflows: it reports on main rather
+# than adding a row to every pull request. The container is an option for
+# contributors, never the required environment.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.devcontainer/**'
+      - 'go.mod'
+      - 'testdata/gen/package.json'
+      - 'e2e/contracts/rust-toolchain.toml'
+      - 'e2e/contracts/stellar-cli.version'
+      - 'e2e/contracts/stellar-cli.sha256'
+      - 'bindings/rust/rust-toolchain.toml'
+      - 'testdata/parity-rust/rust-toolchain.toml'
+      - 'Makefile'
+      - '.github/workflows/ci-devcontainer.yml'
+  schedule:
+    - cron: '0 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  devcontainer:
+    name: the dev container builds and its tools match the pins
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # `up` builds the image from .devcontainer/Dockerfile and starts the
+      # container the way Codespaces and VS Code do, including the
+      # postCreateCommand, so a broken devcontainer.json fails here too.
+      - name: build and start the dev container
+        run: npx --yes @devcontainers/cli@0.90.0 up --workspace-folder . --remove-existing-container
+
+      # Every tool is the pinned version, and `make`, `make vectors-check` and
+      # the build half of `make e2e` work from that clean start.
+      - name: tools match the pins and the documented tasks run
+        run: npx --yes @devcontainers/cli@0.90.0 exec --workspace-folder . bash .devcontainer/verify.sh

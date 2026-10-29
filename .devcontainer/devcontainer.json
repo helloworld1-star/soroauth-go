@@ -1,0 +1,17 @@
+{
+  "name": "soroauth",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "remoteUser": "vscode",
+  "hostRequirements": {
+    "cpus": 4
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": ["golang.go", "rust-lang.rust-analyzer"]
+    }
+  }
+}
