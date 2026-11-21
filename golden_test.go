@@ -17,6 +17,9 @@ import (
 	"github.com/stellar/go-stellar-sdk/xdr"
 )
 
+// currentSchemaVersion is the required schema version for all golden vectors.
+const currentSchemaVersion = 1
+
 // referenceSDK is the exact reference build the vectors must come from. A
 // vector recorded by any other version is not evidence about this one, so the
 // test refuses it rather than comparing against it.
@@ -94,8 +97,8 @@ func loadVectorsFrom(t testing.TB, directory string) []vector {
 		if err := decoder.Decode(&v); err != nil {
 			t.Fatalf("decoding %s: %v", path, err)
 		}
-		if v.SchemaVersion != 1 {
-			t.Fatalf("%s has unsupported schema version %d, want 1", path, v.SchemaVersion)
+		if v.SchemaVersion != currentSchemaVersion {
+			t.Fatalf("%s has unsupported schema version %d, want %d", path, v.SchemaVersion, currentSchemaVersion)
 		}
 		if v.Name == "" {
 			t.Fatalf("%s has no name", path)
