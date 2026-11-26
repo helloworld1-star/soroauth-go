@@ -6,11 +6,11 @@ import (
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/sha256"
 	"errors"
 	"fmt"
 	"math/big"
-	"math/rand"
 	"sort"
 	"strings"
 	"time"
@@ -134,6 +134,29 @@ func Ed25519SignatureScVal(rawPublicKey, signature []byte) (xdr.ScVal, error) {
 			len(signature), ed25519.SignatureSize)
 	}
 	return scVec(accountSignature(rawPublicKey, signature)), nil
+}
+
+// checkStrictlyAscendingKeys applies the host's ordering rule for a classic
+// account's signature vector: each public key must compare strictly greater
+// than the one before it, byte by byte, which also rules out a repeated key
+// (rs-soroban-env soroban-env-host/src/builtin_contracts/account_contract.rs:204-213,
+// "public keys are not ordered"). The host compares BytesN<32> values, whose
+// order is that of their bytes.
+//
+// It is the one implementation of that rule: NewAccountMultiSigner checks the
+// vector it is about to produce with it, and ValidateEntry checks every signed
+// classic-account node with it. On failure it returns the index of the first
+// key that is out of order.
+func checkStrictlyAscendingKeys(keys [][]byte) (int, error) {
+	for i := 1; i < len(keys); i++ {
+		switch bytes.Compare(keys[i-1], keys[i]) {
+		case 0:
+			return i, fmt.Errorf("public key repeats the previous key; the host requires strictly ascending keys")
+		case 1:
+			return i, fmt.Errorf("public keys are not in strictly ascending order")
+		}
+	}
+	return 0, nil
 }
 
 // rawEd25519Key returns the 32 raw public key bytes behind a G… address.
@@ -279,11 +302,15 @@ func newAccountMultiSigner(account string, kps ...ed25519Keypair) (Signer, error
 	sort.Slice(keys, func(i, j int) bool {
 		return bytes.Compare(keys[i].raw, keys[j].raw) < 0
 	})
-	for i := 1; i < len(keys); i++ {
-		if bytes.Equal(keys[i-1].raw, keys[i].raw) {
-			return nil, fmt.Errorf("soroauth: new account multi signer: duplicate signing key %s",
-				keys[i].kp.Address())
-		}
+	raws := make([][]byte, len(keys))
+	for i := range keys {
+		raws[i] = keys[i].raw
+	}
+	// After sorting, the only way the vector can fail the host's strictly
+	// ascending rule is a repeated key.
+	if i, err := checkStrictlyAscendingKeys(raws); err != nil {
+		return nil, fmt.Errorf("soroauth: new account multi signer: duplicate signing key %s: %w",
+			keys[i].kp.Address(), err)
 	}
 
 	return &accountMultiSigner{account: account, keys: keys}, nil
@@ -674,10 +701,13 @@ func (s *retriedSigner) Sign(ctx context.Context, preimage xdr.HashIdPreimage, p
 			return xdr.ScVal{}, fmt.Errorf("soroauth: retry sign cancelled: %w", err)
 		}
 
-		rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 		var jitter time.Duration
-		if backoffDur/4 > 0 {
-			jitter = time.Duration(rng.Int63n(int64(backoffDur / 4)))
+		if maxJitter := int64(backoffDur / 4); maxJitter > 0 {
+			n, randErr := rand.Int(rand.Reader, big.NewInt(maxJitter))
+			if randErr != nil {
+				return xdr.ScVal{}, fmt.Errorf("soroauth: retry sign jitter: %w", randErr)
+			}
+			jitter = time.Duration(n.Int64())
 		}
 		sleepDur := backoffDur + jitter
 		if sleepDur > maxBackoff {

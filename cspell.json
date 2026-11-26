@@ -10,6 +10,8 @@
     "canonicality",
     "cibuildwheel",
     "diffable",
+    "hostrules",
+    "hostvalue",
     "licence",
     "minimisation",
     "minimise",

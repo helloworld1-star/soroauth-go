@@ -241,6 +241,12 @@ func credentialNodes(entry *xdr.SorobanAuthorizationEntry) ([]credentialNode, er
 // A node that already carries a signature is not overwritten unless the caller
 // passes AllowResign; see that option for why.
 //
+// The entry is checked with ValidateEntry before the signer is called, and the
+// signed result is checked again before it is returned, so an entry the host
+// would refuse for its ordering or canonical form (HostRules lists the rules
+// and their rs-soroban-env sources) fails here with ErrHostRuleViolation
+// instead of on chain.
+//
 // ctx is checked before any work, including the source-account pass-through,
 // so a cancelled context fails closed even on a path that never reaches a
 // Signer. The same ctx is passed unchanged to signer.Sign.
@@ -335,13 +341,13 @@ func AuthorizeEntry(
 
 	isDelegates := signed.Credentials.Type == xdr.SorobanCredentialsTypeSorobanCredentialsAddressWithDelegates
 
-	// A delegates entry whose arrays are mis-ordered is rejected by the host,
-	// so it is checked before a signature exists rather than after fees are
-	// paid (CAP-71-01).
-	if isDelegates {
-		if err := ValidateDelegateOrder(signed); err != nil {
-			return xdr.SorobanAuthorizationEntry{}, fmt.Errorf("soroauth: authorize entry: %w", err)
-		}
+	// An entry that breaks a host rule — a mis-ordered or over-deep delegate
+	// tree (CAP-71-01), an unsorted map, an unsorted multisig vector — is
+	// rejected by the host only after the transaction has paid its fee, so
+	// every offline-checkable rule is checked before a signer is asked for
+	// anything.
+	if err := ValidateEntry(signed); err != nil {
+		return xdr.SorobanAuthorizationEntry{}, fmt.Errorf("soroauth: authorize entry: %w", err)
 	}
 
 	nodes, err := credentialNodes(&signed)
@@ -420,6 +426,15 @@ func AuthorizeEntry(
 
 	for _, match := range matches {
 		*match = signature
+	}
+
+	// The signature's own shape counts toward the host rules: its nesting
+	// spends the depth budget of every node it was written to, and a classic
+	// account's vector must be ordered. A signature that breaks a rule is
+	// discarded here, with the rest of the copy, rather than handed back to
+	// be submitted and refused after fees.
+	if err := ValidateEntry(signed); err != nil {
+		return xdr.SorobanAuthorizationEntry{}, fmt.Errorf("soroauth: authorize entry: signature from %s: %w", target, err)
 	}
 
 	config.hook.emit(ctx, HookEvent{Phase: HookPhasePostSign, CredentialType: credentialTypeName(entry.Credentials.Type), TargetAddress: target, ValidUntilLedger: validUntilLedger})

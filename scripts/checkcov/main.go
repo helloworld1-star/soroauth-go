@@ -43,6 +43,7 @@ import (
 )
 
 // Floor is the committed minimum for one package.
+// invariant-allow: no-floats coverage percentage floors are computed and serialized as floating point
 type Floor struct {
 	// Measured is the coverage percentage observed when the floor was set.
 	// The checker refuses a floor above it: floors come from measurement,
@@ -60,6 +61,7 @@ type Floor struct {
 
 // Policy is the rule every floor must satisfy, committed next to the floors
 // so the rationale travels with the numbers.
+// invariant-allow: no-floats coverage policy threshold is compared against float64 floor percentages
 type Policy struct {
 	// SigningPathFloorMinExclusive is the repository-wide floor this scheme
 	// replaced. A signing-path floor must stay strictly above it, so a
@@ -93,6 +95,7 @@ type coverage struct {
 
 // percent is the package's coverage as a percentage in [0, 100]. Only call it
 // when total is non-zero.
+// invariant-allow: no-floats percentage ratio requires floating point division for coverage reporting
 func (c coverage) percent() float64 {
 	return 100 * float64(c.covered) / float64(c.total)
 }

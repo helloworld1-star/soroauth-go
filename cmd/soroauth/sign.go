@@ -433,6 +433,7 @@ func exitCodeForSigningError(err error) int {
 		errors.Is(err, soroauth.ErrMissingSigner),
 		errors.Is(err, soroauth.ErrNoInvokeOperation),
 		errors.Is(err, soroauth.ErrUnsupportedEnvelope),
+		errors.Is(err, soroauth.ErrHostRuleViolation),
 		errors.Is(err, errExecSignerRefused):
 		return ExitSigningRefusal
 	case errors.Is(err, soroauth.ErrSignatureMismatch),

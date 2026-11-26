@@ -72,6 +72,20 @@
 //	MaxDecodeDepth       = 64
 //	MaxDecodeInputBytes  = 1 << 20 (1 MiB decoded)
 //
+// Host limits (numeric constants, stable — see docs/host-rules.md)
+//
+//	HostDepthLimit       = 100 (the host's DEFAULT_HOST_DEPTH_LIMIT)
+//	MaxDelegateDepth     = 54  (the deepest fully signed delegate tree MaxDecodeDepth admits)
+//
+// Host rule identifiers (stable — HostRuleError.Rule and HostRules report these)
+//
+//	RuleDelegateOrder, RuleDelegateUnique, RuleDelegateDepth, RuleValueDepth,
+//	RuleMapKeyOrder, RuleValueForm, RuleSymbolForm, RuleAddressType,
+//	RuleAccountSignature, RuleCreateContractAuth (checked offline by ValidateEntry)
+//	RuleNonceUnused, RuleExpirationReached, RuleExpirationTooLate,
+//	RuleAccountWeight, RuleDelegateUse, RuleCallDepth, RuleResourceLimits
+//	(listed by HostRules, not checkable offline)
+//
 // Signature shapes (stable — DescribeSignature returns these)
 //
 //	SignatureShapePasskey  = "passkey"
@@ -124,6 +138,8 @@
 //	ErrChainExhausted
 //	ErrQuorumNotMet
 //	ErrQuorumDisagreement
+//	ErrHostRuleViolation
+//	ErrDelegateDepthLimit
 //
 // Chain outcomes (stable — signer chain audit records use these)
 //

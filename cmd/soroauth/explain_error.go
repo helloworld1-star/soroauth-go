@@ -139,6 +139,7 @@ var explainErrorMappings = []explainErrorMapping{
 
 func init() {
 	if err := registerExplainError(); err != nil {
+		// invariant-allow: no-panic init validates static compile-time table and cannot return an error
 		panic(fmt.Sprintf("failed to register explain-error: %v", err))
 	}
 }

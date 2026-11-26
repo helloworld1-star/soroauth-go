@@ -228,12 +228,14 @@ func (a *legacyAddressArm) GetSignature(creds xdr.SorobanCredentials) xdr.ScVal 
 	return creds.Address.Signature
 }
 
+// invariant-allow: no-mutation internal arm setter mutates only a deep-copied entry's credentials
 func (a *legacyAddressArm) SetSignature(creds *xdr.SorobanCredentials, sig xdr.ScVal) {
 	if creds.Address != nil {
 		creds.Address.Signature = sig
 	}
 }
 
+// invariant-allow: no-mutation internal arm setter mutates only a deep-copied entry's credentials
 func (a *legacyAddressArm) SetExpiration(creds *xdr.SorobanCredentials, exp uint32) {
 	if creds.Address != nil {
 		creds.Address.SignatureExpirationLedger = xdr.Uint32(exp)
@@ -331,12 +333,14 @@ func (a *addressV2Arm) GetSignature(creds xdr.SorobanCredentials) xdr.ScVal {
 	return creds.AddressV2.Signature
 }
 
+// invariant-allow: no-mutation internal arm setter mutates only a deep-copied entry's credentials
 func (a *addressV2Arm) SetSignature(creds *xdr.SorobanCredentials, sig xdr.ScVal) {
 	if creds.AddressV2 != nil {
 		creds.AddressV2.Signature = sig
 	}
 }
 
+// invariant-allow: no-mutation internal arm setter mutates only a deep-copied entry's credentials
 func (a *addressV2Arm) SetExpiration(creds *xdr.SorobanCredentials, exp uint32) {
 	if creds.AddressV2 != nil {
 		creds.AddressV2.SignatureExpirationLedger = xdr.Uint32(exp)
@@ -424,12 +428,14 @@ func (a *delegatesArm) GetSignature(creds xdr.SorobanCredentials) xdr.ScVal {
 	return creds.AddressWithDelegates.AddressCredentials.Signature
 }
 
+// invariant-allow: no-mutation internal arm setter mutates only a deep-copied entry's credentials
 func (a *delegatesArm) SetSignature(creds *xdr.SorobanCredentials, sig xdr.ScVal) {
 	if creds.AddressWithDelegates != nil {
 		creds.AddressWithDelegates.AddressCredentials.Signature = sig
 	}
 }
 
+// invariant-allow: no-mutation internal arm setter mutates only a deep-copied entry's credentials
 func (a *delegatesArm) SetExpiration(creds *xdr.SorobanCredentials, exp uint32) {
 	if creds.AddressWithDelegates != nil {
 		creds.AddressWithDelegates.AddressCredentials.SignatureExpirationLedger = xdr.Uint32(exp)
@@ -447,6 +453,7 @@ func (a *delegatesArm) GetDelegates(creds xdr.SorobanCredentials) []xdr.SorobanD
 	return creds.AddressWithDelegates.Delegates
 }
 
+// invariant-allow: no-mutation internal arm setter mutates only a deep-copied entry's credentials
 func (a *delegatesArm) SetDelegates(creds *xdr.SorobanCredentials, delegates []xdr.SorobanDelegateSignature) {
 	if creds.AddressWithDelegates != nil {
 		creds.AddressWithDelegates.Delegates = delegates

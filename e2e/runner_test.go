@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stellar/go-stellar-sdk/keypair"
@@ -232,6 +233,13 @@ func logSignedEntries(t *testing.T, entries []xdr.SorobanAuthorizationEntry) {
 
 	for i, entry := range entries {
 		info, err := soroauth.Inspect(entry)
+		if errors.Is(err, soroauth.ErrDecodeLimit) {
+			// The delegate depth scenarios deliberately submit trees deeper
+			// than soroauth reads, to find the host's own limit. That is not a
+			// reason to stop the run; the scenario asserts what it needs.
+			t.Logf("entry %d: deeper than Inspect walks (%v); submitted as built", i, err)
+			continue
+		}
 		if err != nil {
 			t.Fatalf("inspecting signed entry %d: %v", i, err)
 		}

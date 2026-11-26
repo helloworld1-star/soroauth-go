@@ -354,7 +354,7 @@ func TestGoldenVectorsCoverTheRequiredCases(t *testing.T) {
 		"v2_account_multisig_20_signatures", // #366: the host's 20-signature cap
 		"v2_empty_args",                     // #366: empty argument list
 		"delegates_single_node",             // #366: single-delegate tree
-		"delegates_chain_depth_57",          // #366: deepest accepted nesting
+		"delegates_chain_depth_54",          // #366: deepest accepted nesting, signed
 	}
 
 	present := map[string]bool{}

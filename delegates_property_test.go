@@ -3,7 +3,7 @@ package soroauth
 import (
 	"bytes"
 	"errors"
-	"math/rand"
+	"math/rand" // invariant-allow: no-math-rand deterministic PRNG seed for reproducible property tests
 	"reflect"
 	"testing"
 

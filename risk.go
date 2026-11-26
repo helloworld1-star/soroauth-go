@@ -87,6 +87,11 @@ type RiskConfig struct {
 	// CurrentLedger is the ledger sequence to compare ValidUntilLedger
 	// against. If zero, far-future expiration checking is skipped.
 	CurrentLedger uint32
+
+	// CustomRules are user-configured rules loaded from configuration that
+	// run alongside the built-in heuristics. Configured rules cannot suppress
+	// built-in findings.
+	CustomRules []ConfiguredRule
 }
 
 // DefaultRiskConfig returns a configuration with conservative defaults.
@@ -235,6 +240,17 @@ func Analyze(entry xdr.SorobanAuthorizationEntry, cfg *RiskConfig) ([]Finding, e
 			Description: "Entry uses SOROBAN_CREDENTIALS_ADDRESS which does not bind the signer address into the payload",
 			Rationale:   "Legacy credentials are vulnerable to a narrow replay case where a signature for one account could be replayed for another if they share a signing key and the contract doesn't bind the address in its arguments. V2 credentials (ADDRESS_V2 or ADDRESS_WITH_DELEGATES) close this.",
 		})
+	}
+
+	// Evaluate configured custom rules alongside built-in heuristics
+	if len(cfg.CustomRules) > 0 {
+		for _, rule := range cfg.CustomRules {
+			customFindings, err := rule.Evaluate(entry)
+			if err != nil {
+				return nil, fmt.Errorf("soroauth: analyze: custom rule %q: %w", rule.Name(), err)
+			}
+			findings = append(findings, customFindings...)
+		}
 	}
 
 	// Sort findings by severity: critical > warning > info

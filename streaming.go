@@ -44,6 +44,10 @@ func StreamingAllowResign() StreamingSignOption {
 // partly signed — the error path returns the zero entry. The visitor is never
 // called after cancellation.
 //
+// Like AuthorizeEntry, it runs ValidateEntry before the first visitor call and
+// on the signed result, so an entry or signature that breaks a host rule fails
+// with ErrHostRuleViolation.
+//
 // Output bytes are identical to AuthorizeEntry for every golden vector,
 // proven by test.
 func StreamingSign(
@@ -85,11 +89,10 @@ func StreamingSign(
 		return xdr.SorobanAuthorizationEntry{}, fmt.Errorf("soroauth: streaming sign: %w", err)
 	}
 
-	isDelegates := signed.Credentials.Type == xdr.SorobanCredentialsTypeSorobanCredentialsAddressWithDelegates
-	if isDelegates {
-		if err := ValidateDelegateOrder(signed); err != nil {
-			return xdr.SorobanAuthorizationEntry{}, fmt.Errorf("soroauth: streaming sign: %w", err)
-		}
+	// The same single validation entry point AuthorizeEntry uses, before any
+	// visitor is asked to sign.
+	if err := ValidateEntry(signed); err != nil {
+		return xdr.SorobanAuthorizationEntry{}, fmt.Errorf("soroauth: streaming sign: %w", err)
 	}
 
 	nodes, err := credentialNodes(&signed)
@@ -140,6 +143,12 @@ func StreamingSign(
 		return xdr.SorobanAuthorizationEntry{}, fmt.Errorf("soroauth: streaming sign: %w", err)
 	}
 	credentials.SignatureExpirationLedger = xdr.Uint32(validUntilLedger)
+
+	// The visitor's signatures count toward the host rules; one that breaks a
+	// rule is discarded with the copy rather than returned.
+	if err := ValidateEntry(signed); err != nil {
+		return xdr.SorobanAuthorizationEntry{}, fmt.Errorf("soroauth: streaming sign: %w", err)
+	}
 
 	return signed, nil
 }

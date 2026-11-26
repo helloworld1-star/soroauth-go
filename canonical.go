@@ -470,12 +470,17 @@ func encodeCanonicalAddress(address xdr.ScAddress) (canonicalAddress, error) {
 	if address.Type == xdr.ScAddressTypeScAddressTypeContract && address.ContractId == nil {
 		return canonicalAddress{}, fmt.Errorf("contract address arm has no contract id")
 	}
-	if rendered, err := FormatAddress(address); err == nil {
+	if address.Type == xdr.ScAddressTypeScAddressTypeMuxedAccount && address.MuxedAccount == nil {
+		return canonicalAddress{}, fmt.Errorf("muxed address arm has no muxed account")
+	}
+	if rendered, err := FormatArgumentAddress(address); err == nil {
 		switch address.Type {
 		case xdr.ScAddressTypeScAddressTypeAccount:
 			return canonicalAddress{Type: "account", Account: rendered}, nil
 		case xdr.ScAddressTypeScAddressTypeContract:
 			return canonicalAddress{Type: "contract", Contract: rendered}, nil
+		case xdr.ScAddressTypeScAddressTypeMuxedAccount:
+			return canonicalAddress{Type: "muxed_account", Account: rendered}, nil
 		}
 	}
 	encoded, err := safeMarshalBase64(address)
@@ -1153,6 +1158,16 @@ func decodeCanonicalAddress(address canonicalAddress) (xdr.ScAddress, error) {
 		}
 		if parsed.Type != xdr.ScAddressTypeScAddressTypeContract {
 			return xdr.ScAddress{}, fmt.Errorf("%q is not a contract address", address.Contract)
+		}
+		return parsed, nil
+
+	case "muxed_account":
+		if address.Account == "" || address.Contract != "" || address.XDR != "" {
+			return xdr.ScAddress{}, fmt.Errorf("muxed_account address is missing account or carries another arm")
+		}
+		parsed, err := parseMuxedAddress(address.Account)
+		if err != nil {
+			return xdr.ScAddress{}, err
 		}
 		return parsed, nil
 

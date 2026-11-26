@@ -355,6 +355,34 @@ var (
 	// but fails on-chain, because the displaced signature was made against
 	// the same payload and cannot be recovered.
 	ErrMergeSignatureConflict = errors.New("entries have conflicting signatures for the same node")
+
+	// ErrHostRuleViolation is returned when an entry breaks one of the rules
+	// the Soroban host enforces on an authorization entry's ordering and
+	// canonical form: delegate order, map key order, value depth and form,
+	// the classic multisig vector, and the others HostRules lists with their
+	// rs-soroban-env citations. Every such violation is a *HostRuleError
+	// naming the rule and where in the entry it was found.
+	//
+	// ValidateEntry is the one place these are checked, and AuthorizeEntry and
+	// StreamingSign run it before any signer is asked to sign: the host refuses
+	// such an entry only after the transaction carrying it has paid its fee.
+	ErrHostRuleViolation = errors.New("entry violates a soroban host rule")
+
+	// ErrDelegateDepthLimit is returned when a CAP-71-01 delegate tree is
+	// deeper than the host can read, or deeper than soroauth's MaxDelegateDepth.
+	//
+	// The host reads a delegate tree recursively against its depth budget of
+	// HostDepthLimit levels and refuses the entry with Error(Context,
+	// ExceededLimit) once a delegate at depth k with signature s needs more than
+	// that: k + 1 + depth(s) levels (rs-soroban-env soroban-env-host
+	// src/auth.rs:2163-2209, budget/limits.rs:41). soroauth caps the depth at
+	// MaxDelegateDepth, below the host's limit, so that every tree it signs can
+	// also be decoded by DecodeAuthorizationEntry. WithDelegates, ValidateEntry,
+	// AuthorizeEntry and StreamingSign all refuse an over-limit tree before a
+	// signature exists. It always arrives inside a *HostRuleError for
+	// RuleDelegateDepth, so errors.Is(err, ErrHostRuleViolation) also matches,
+	// and a tree deeper than MaxDelegateDepth matches ErrDecodeLimit as well.
+	ErrDelegateDepthLimit = errors.New("delegate tree exceeds the depth limit")
 )
 
 // NoMatchingCredentialNodeError is returned when no credential node in the

@@ -268,18 +268,23 @@ const delegate = (label, nested = []) => ({
 // This is a measured disagreement, not a free choice. The pinned JS SDK imposes
 // no policy cap at all — its only bound is the XDR codec's 1500-frame recursion
 // guard, and it happily builds chains of a thousand delegates. The Go library
-// refuses them in two places, and the tighter one wins:
+// is bounded by DecodeAuthorizationEntry's 64-frame XDR limit, and the bound
+// that matters is the one on the SIGNED entry, because that is what the
+// library hands back and what a caller decodes again:
 //
-//   - DecodeAuthorizationEntry applies a 64-frame XDR bound, and each delegate
-//     costs roughly two frames, so a chain of 58 is the first it refuses; 57 is
-//     the deepest it decodes.
-//   - WithDelegates applies the MaxDecodeDepth = 64 traversal bound, allowing a
-//     chain of 63 before its own guard bites on the empty level below the leaf.
+//   - Each delegate level costs one go-xdr frame, plus a fixed overhead for the
+//     entry around the tree. An unsigned chain of 57 Void placeholders decodes;
+//     58 does not.
+//   - Signing the leaf writes a classic account signature (a vector holding one
+//     {public_key, signature} map) at the deepest level, which costs three more
+//     frames on the deepest path. A signed chain of 54 decodes; 55 does not.
 //
-// So the deepest nesting the pipeline accepts end to end is 57. That the JS SDK
-// will produce trees the library refuses is the finding this vector records;
-// see docs/parity.md.
-const MAX_VECTOR_DELEGATE_DEPTH = 57;
+// So the deepest nesting the pipeline accepts end to end — build, sign, and
+// decode the result — is 54. (An earlier version recorded 57, which is the
+// unsigned bound: the library signed that chain and then refused to decode its
+// own output.) That the JS SDK will produce trees the library refuses is the
+// finding this vector records; see docs/parity.md.
+const MAX_VECTOR_DELEGATE_DEPTH = 54;
 
 const delegateChainLabel = (level) => `soroauth-vector-delegate-chain-${level}`;
 

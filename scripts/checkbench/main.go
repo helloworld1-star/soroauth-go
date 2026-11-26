@@ -50,7 +50,7 @@ type result struct {
 	name    string
 	allocs  int
 	bytes   int
-	nsPerOp float64
+	nsPerOp float64 // invariant-allow: no-floats benchmark timing output reports ns/op as floating point
 }
 
 // benchLine matches e.g.:

@@ -195,6 +195,7 @@ func invokeOperationIndex(envelope *xdr.TransactionEnvelope) (int, error) {
 
 // attachRecordedAuth writes the recorded entries onto the operation the record
 // pass was run for, so the next step of the flow has an envelope to sign.
+// invariant-allow: no-mutation unexported helper mutates freshly decoded envelope inside SimulateRecord
 func attachRecordedAuth(envelope *xdr.TransactionEnvelope, index int, entries []xdr.SorobanAuthorizationEntry) error {
 	inner, err := innerTransaction(envelope)
 	if err != nil {

@@ -146,7 +146,8 @@ func runDelegatesWithStdin(args []string, stdout, stderr io.Writer, getenv func(
 		var exitCode int
 		if errors.Is(err, soroauth.ErrUnsupportedCredentials) ||
 			errors.Is(err, soroauth.ErrAlreadySigned) ||
-			errors.Is(err, soroauth.ErrDuplicateDelegate) {
+			errors.Is(err, soroauth.ErrDuplicateDelegate) ||
+			errors.Is(err, soroauth.ErrHostRuleViolation) {
 			exitCode = ExitSigningRefusal
 		} else if errors.Is(err, soroauth.ErrInvalidExpiration) {
 			exitCode = ExitVerificationFailed

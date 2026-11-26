@@ -106,6 +106,7 @@ func WithCustomVerifier(fn func(xdr.SorobanAuthorizationEntry) error) PolicySign
 // If inner is nil, NewPolicySigner panics.
 func NewPolicySigner(inner soroauth.Signer, rules []PolicyRule, opts ...PolicySignerOption) *PolicySigner {
 	if inner == nil {
+		// invariant-allow: no-panic constructor fails immediately on nil Signer interface as documented
 		panic("policy: NewPolicySigner called with nil inner signer")
 	}
 	p := &PolicySigner{

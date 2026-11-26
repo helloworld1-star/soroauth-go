@@ -1046,6 +1046,16 @@ for duplicates within that level, as CAP-71-01 requires; the same address at two
 _different_ levels is allowed, and one `AuthorizeEntry` call fills every node
 carrying that address.
 
+A tree may be at most `MaxDelegateDepth` (54) levels deep. The host reads deeper
+trees — up to 98 levels with Void signatures, 96 with ed25519 ones — but 54 is
+the deepest fully signed tree soroauth's own bounded decoder can read back, so
+it is the one limit every soroauth path applies, before any signer is called
+(`ErrDelegateDepthLimit`). The host has no limit on how many delegates one array
+holds; breadth is bounded only by the network's transaction size and resource
+limits. [docs/host-rules.md](docs/host-rules.md) gives the host source, the
+measurements and the cost per delegate, and lists every other rule
+`ValidateEntry` checks before signing.
+
 Because every node commits to the same payload, the expiration is fixed once any
 node is signed: signing another node at a different `validUntilLedger` would
 leave the entry's signatures disagreeing, so soroauth refuses it.

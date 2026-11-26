@@ -127,6 +127,8 @@ code before it can obtain a submittable envelope.
 | `signer.go`          | The `Signer` interface, `NewEd25519Signer`, `NewAccountMultiSigner`, `SignerFunc`, and the account signature `ScVal` shape                                                                                                                                              |
 | `authorize.go`       | `AuthorizeEntry`, the credential-node walk, target matching, and the resign/expiration guards                                                                                                                                                                           |
 | `delegates.go`       | `Delegate`, `WithDelegates`, `ValidateDelegateOrder` — the CAP-71-01 tree                                                                                                                                                                                               |
+| `hostrules.go`       | `HostRules`, `ValidateEntry`, `HostRuleError`, `MaxDelegateDepth` — every host rule on an entry's ordering and canonical form, with its rs-soroban-env citation, checked in one place before signing (docs/host-rules.md)                                               |
+| `hostvalue.go`       | The host's ScVal order (map keys) and depth budget model, which ValidateEntry applies                                                                                                                                                                                   |
 | `invocation.go`      | `AuthorizeInvocation` and nonce generation                                                                                                                                                                                                                              |
 | `upgrade.go`         | `UpgradeToV2`                                                                                                                                                                                                                                                           |
 | `verify.go`          | `VerifyEntry` → `VerificationReport`: rebuilds the payload from an entry as it stands and decides each classic-account signature, reporting a per-node verdict (`verified`, `unsigned`, `invalid`, `cannot_check`)                                                      |
@@ -154,6 +156,14 @@ input, and returns `ErrDecodeLimit` when either bites. `Inspect`,
 values and their rationale live on the constants in `decode.go`. This does not
 change any emitted bytes: the limits only bound what the library is willing to
 read.
+
+A delegate tree has one depth policy, `MaxDelegateDepth` (54), derived from that
+decode bound: it is the deepest fully signed tree `DecodeAuthorizationEntry`
+admits, so soroauth never signs a tree it cannot read back, and it is below the
+host's own limit (96 levels with ed25519 signatures). `WithDelegates`,
+`ValidateEntry`, `AuthorizeEntry` and `StreamingSign` all refuse a deeper tree
+with `ErrDelegateDepthLimit`. [docs/host-rules.md](docs/host-rules.md) derives
+both numbers from the host source and records the measurements.
 
 ## The delegate model
 

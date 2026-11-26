@@ -160,3 +160,32 @@ func invocationLabel(inv xdr.SorobanAuthorizedInvocation) string {
 		return string(inv.Function.Type)
 	}
 }
+
+// RenderInvocationWithArgs renders an authorized invocation naming its function,
+// contract, and arguments (with muxed addresses formatted in full M... form).
+func RenderInvocationWithArgs(inv xdr.SorobanAuthorizedInvocation) string {
+	switch inv.Function.Type {
+	case xdr.SorobanAuthorizedFunctionTypeSorobanAuthorizedFunctionTypeContractFn:
+		if inv.Function.ContractFn == nil {
+			return "contract_fn"
+		}
+		contract, err := FormatAddress(inv.Function.ContractFn.ContractAddress)
+		if err != nil {
+			contract = "unknown_contract"
+		}
+		var argsStr string
+		if len(inv.Function.ContractFn.Args) > 0 {
+			formattedArgs := make([]string, len(inv.Function.ContractFn.Args))
+			for i, arg := range inv.Function.ContractFn.Args {
+				formattedArgs[i] = FormatScVal(arg)
+			}
+			argsStr = fmt.Sprintf("(%s)", strings.Join(formattedArgs, ", "))
+		}
+		if argsStr != "" {
+			return fmt.Sprintf("%s%s (%s)", string(inv.Function.ContractFn.FunctionName), argsStr, contract)
+		}
+		return fmt.Sprintf("%s (%s)", string(inv.Function.ContractFn.FunctionName), contract)
+	default:
+		return string(inv.Function.Type)
+	}
+}

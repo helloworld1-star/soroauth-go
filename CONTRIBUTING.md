@@ -128,6 +128,7 @@ rather than across several documents. Run `make help` for the list.
 | `make e2e`           | builds the test contract with `stellar-cli` and runs `go test -tags e2e -v ./e2e/...`                 |
 | `make parity`        | installs the pinned Python SDK into `.venv-parity` and runs the parity harness and its tests          |
 | `make parity-rust`   | runs the Rust stellar-xdr parity harness and its tests (needs Rust 1.93.0)                            |
+| `make host-probe`    | runs the real Soroban host against delegate trees and asserts the limits in `docs/host-rules.md`      |
 | `make differential`  | regenerates the differential fuzzing corpus and checks it with the Go, JS and Python implementations  |
 | `make wasm`          | builds the js/wasm signing core to `wasm/dist/`                                                       |
 | `make wasm-check`    | builds the wasm core and replays every golden vector through it                                       |

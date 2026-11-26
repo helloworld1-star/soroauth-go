@@ -387,6 +387,7 @@ func TestVerifyAcceptsAnEnvelope(t *testing.T) {
 		t.Fatalf("reports = %d entries, want 1", len(reports))
 	}
 	// Envelope positions are one-based, matching the CLI.
+	// invariant-allow: no-floats encoding/json decodes JSON numbers into map[string]any as float64
 	if reports[0]["operation_index"] != float64(1) || reports[0]["entry_index"] != float64(1) {
 		t.Errorf("positions = %v/%v, want 1/1",
 			reports[0]["operation_index"], reports[0]["entry_index"])

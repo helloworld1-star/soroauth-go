@@ -1,0 +1,5 @@
+# Pinned so a probe run is reproducible: the same toolchain the other Rust
+# harnesses in this repository use. soroban-env-host 30.0.1 declares
+# rust-version 1.87.0, and 1.93.0 satisfies it.
+[toolchain]
+channel = "1.93.0"

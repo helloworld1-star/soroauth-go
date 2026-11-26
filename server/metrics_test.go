@@ -112,6 +112,7 @@ func TestMetricLabelsAreClosed(t *testing.T) {
 	}
 }
 
+// invariant-allow: no-floats Prometheus metric DTO GetValue returns float64
 func counterValue(t *testing.T, families []*dto.MetricFamily, name string, want map[string]string) float64 {
 	t.Helper()
 	for _, family := range families {

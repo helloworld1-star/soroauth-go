@@ -5,7 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"math/rand"
+	"math/rand" // invariant-allow: no-math-rand deterministic PRNG seed for reproducible concurrency test ordering
 	"runtime"
 	"sync"
 	"testing"

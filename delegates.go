@@ -65,8 +65,9 @@ type Delegate struct {
 	// ForAddress(this address).
 	Signature *xdr.ScVal
 
-	// Nested holds signers this delegate in turn delegates to. The tree may be
-	// arbitrarily deep.
+	// Nested holds signers this delegate in turn delegates to. The top-level
+	// delegates are depth 1, and no delegate may sit deeper than
+	// MaxDelegateDepth; the host's own limit is described there.
 	Nested []Delegate
 }
 
@@ -112,15 +113,17 @@ func sortDelegateLevel(nodes []delegateNode) error {
 // with the top level at 1.
 //
 // A caller-supplied Delegate tree is just as untrusted as a decoded one when it
-// comes from an account's advertised policy, so the recursion is bounded by
-// MaxDecodeDepth and a tree past that ceiling is refused with ErrDecodeLimit
-// rather than followed.
-func buildDelegateNodes(delegates []Delegate, depth int) ([]xdr.SorobanDelegateSignature, error) {
-	if err := checkTraversalDepth(depth); err != nil {
-		return nil, err
-	}
+// comes from an account's advertised policy, so the recursion stops at
+// MaxDelegateDepth and a deeper tree is refused with ErrDelegateDepthLimit
+// (RuleDelegateDepth) rather than followed.
+func buildDelegateNodes(delegates []Delegate, depth int, parentPath string) ([]xdr.SorobanDelegateSignature, error) {
 	if len(delegates) == 0 {
 		return nil, nil
+	}
+	if depth > MaxDelegateDepth {
+		return nil, ruleError(RuleDelegateDepth, parentPath, fmt.Sprintf(
+			"%s: delegates at depth %d exceed soroauth's MaxDelegateDepth of %d", parentPath, depth, MaxDelegateDepth),
+			ErrDelegateDepthLimit, ErrDecodeLimit)
 	}
 
 	built := make([]delegateNode, 0, len(delegates))
@@ -139,7 +142,11 @@ func buildDelegateNodes(delegates []Delegate, depth int) ([]xdr.SorobanDelegateS
 			signature = *delegate.Signature
 		}
 
-		nested, err := buildDelegateNodes(delegate.Nested, depth+1)
+		path := parentPath + ".delegates[" + delegate.Address + "]"
+		if depth > 1 {
+			path = parentPath + ".nested[" + delegate.Address + "]"
+		}
+		nested, err := buildDelegateNodes(delegate.Nested, depth+1, path)
 		if err != nil {
 			return nil, err
 		}
@@ -188,6 +195,14 @@ func buildDelegateNodes(delegates []Delegate, depth int) ([]xdr.SorobanDelegateS
 //
 // Each delegates array, at every depth, is sorted by address and checked for
 // duplicates; see sortDelegateLevel.
+//
+// The tree is also held to the host's depth rule. A tree deeper than
+// MaxDelegateDepth, or a delegate whose supplied Signature would push its
+// depth past the host's budget (RuleDelegateDepth), is refused with
+// ErrDelegateDepthLimit. The host has no limit on how many delegates one array
+// holds; breadth is bounded only by the network's transaction size and
+// resource limits, which cannot be known offline (docs/host-rules.md gives the
+// measured cost per delegate).
 func WithDelegates(
 	entry xdr.SorobanAuthorizationEntry,
 	validUntilLedger uint32,
@@ -230,8 +245,13 @@ func WithDelegates(
 			ErrAlreadySigned)
 	}
 
-	nodes, err := buildDelegateNodes(delegates, 1)
+	nodes, err := buildDelegateNodes(delegates, 1, "credentials")
 	if err != nil {
+		return xdr.SorobanAuthorizationEntry{}, fmt.Errorf("soroauth: with delegates: %w", err)
+	}
+	// Caller-supplied delegate signatures count toward the host's depth
+	// budget, so the finished tree is held to RuleDelegateDepth here.
+	if err := checkDelegateTreeDepth(nodes, "credentials", 1); err != nil {
 		return xdr.SorobanAuthorizationEntry{}, fmt.Errorf("soroauth: with delegates: %w", err)
 	}
 
@@ -268,7 +288,12 @@ func WithDelegates(
 // validateDelegateLevel checks one delegates array, then recurses. depth is the
 // current level, with the top level at 1, and is bounded by MaxDecodeDepth for
 // the same reason delegateNodesOf is.
-func validateDelegateLevel(nodes []xdr.SorobanDelegateSignature, depth int) error {
+//
+// A violation is a *HostRuleError for RuleDelegateUnique or RuleDelegateOrder:
+// the host refuses both while reading the tree (rs-soroban-env
+// soroban-env-host/src/auth.rs:2163-2193). It compares the addresses with their
+// derived Ord, which for ScAddress is the order of their XDR bytes.
+func validateDelegateLevel(nodes []xdr.SorobanDelegateSignature, depth int, parentPath string) error {
 	if err := checkTraversalDepth(depth); err != nil {
 		return err
 	}
@@ -278,27 +303,27 @@ func validateDelegateLevel(nodes []xdr.SorobanDelegateSignature, depth int) erro
 		if err != nil {
 			return err
 		}
+		address, err := FormatAddress(nodes[i].Address)
+		if err != nil {
+			address = "<unformattable address>"
+		}
+		path := parentPath + ".delegates[" + address + "]"
+		if depth > 1 {
+			path = parentPath + ".nested[" + address + "]"
+		}
 
 		if previous != nil {
 			switch bytes.Compare(previous, current) {
 			case 0:
-				address, err := FormatAddress(nodes[i].Address)
-				if err != nil {
-					address = "<unformattable address>"
-				}
-				return fmt.Errorf("%s: %w", address, &DuplicateDelegateError{Address: address})
+				return ruleError(RuleDelegateUnique, path, address, &DuplicateDelegateError{Address: address})
 			case 1:
-				address, err := FormatAddress(nodes[i].Address)
-				if err != nil {
-					address = "<unformattable address>"
-				}
-				return fmt.Errorf(
-					"delegates are not in ascending address order at index %d (%s)", i, address)
+				return ruleError(RuleDelegateOrder, path, fmt.Sprintf(
+					"delegates are not in ascending address order at index %d (%s)", i, address))
 			}
 		}
 		previous = current
 
-		if err := validateDelegateLevel(nodes[i].NestedDelegates, depth+1); err != nil {
+		if err := validateDelegateLevel(nodes[i].NestedDelegates, depth+1, path); err != nil {
 			return err
 		}
 	}
@@ -313,6 +338,12 @@ func validateDelegateLevel(nodes []xdr.SorobanDelegateSignature, depth int) erro
 // fails here would be rejected by the host, so catching it before a signature
 // exists turns an on-chain failure that costs fees into a local error.
 //
+// A violation is a *HostRuleError for RuleDelegateOrder or RuleDelegateUnique,
+// so errors.Is matches ErrHostRuleViolation, and a duplicate also matches
+// ErrDuplicateDelegate. ValidateEntry calls this as part of checking every
+// offline host rule; call ValidateEntry rather than this when the question is
+// whether the host will accept the entry.
+//
 // Any arm other than the delegates arm returns ErrUnsupportedCredentials:
 // there is no delegate ordering to check, and silently returning nil would let
 // a caller believe an entry had been validated when nothing was examined.
@@ -324,7 +355,7 @@ func ValidateDelegateOrder(entry xdr.SorobanAuthorizationEntry) error {
 		return fmt.Errorf("soroauth: validate delegate order: address_with_delegates credentials arm is empty")
 	}
 
-	if err := validateDelegateLevel(entry.Credentials.AddressWithDelegates.Delegates, 1); err != nil {
+	if err := validateDelegateLevel(entry.Credentials.AddressWithDelegates.Delegates, 1, "credentials"); err != nil {
 		return fmt.Errorf("soroauth: validate delegate order: %w", err)
 	}
 	return nil

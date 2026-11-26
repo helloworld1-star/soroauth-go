@@ -321,3 +321,36 @@ func TestDecodeTransactionEnvelopeRejectsPathologicalDepth(t *testing.T) {
 		t.Errorf("error %q does not match ErrDecodeLimit", err)
 	}
 }
+
+// TestDeepestDelegateVectorDecodesWhenSigned proves the claim the deepest
+// delegate vector's name makes: the chain it records is the deepest the library
+// accepts end to end, which includes decoding the entry it signed.
+//
+// An earlier version recorded depth 57. Its unsigned entry decodes, but signing
+// the leaf adds three levels of XDR nesting on the deepest path, and
+// DecodeAuthorizationEntry refused the signed entry with ErrDecodeLimit — the
+// library could not read back its own output. This test decodes the signed
+// entry, so a vector deeper than the decode bound admits fails here.
+func TestDeepestDelegateVectorDecodesWhenSigned(t *testing.T) {
+	const name = "delegates_chain_depth_54"
+	for _, v := range loadVectors(t) {
+		if v.Name != name {
+			continue
+		}
+		for _, tc := range []struct {
+			label   string
+			encoded string
+		}{
+			{"unsigned", v.UnsignedEntryXDR},
+			{"signed", v.SignedEntryXDR},
+		} {
+			t.Run(tc.label, func(t *testing.T) {
+				if _, err := DecodeAuthorizationEntry(tc.encoded); err != nil {
+					t.Fatalf("DecodeAuthorizationEntry refused the %s %s entry: %v", tc.label, name, err)
+				}
+			})
+		}
+		return
+	}
+	t.Fatalf("vector %s not found in testdata/vectors", name)
+}

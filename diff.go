@@ -327,10 +327,16 @@ func diffContractFn(path string, a, b xdr.InvokeContractArgs, add func(ChangeKin
 		}
 		if !same {
 			// Arguments are ScVals of any type and depth. Reporting which
-			// argument changed, with its type on each side, locates the change
-			// without this becoming an ScVal pretty-printer.
-			add(ChangeKindInvocation, fmt.Sprintf("%s.args[%d]", path, i),
-				a.Args[i].Type.String(), b.Args[i].Type.String())
+			// argument changed, with its formatted representation on each side,
+			// locates the change and preserves full muxed addresses without truncation.
+			valA := FormatScVal(a.Args[i])
+			valB := FormatScVal(b.Args[i])
+			if valA != valB {
+				add(ChangeKindInvocation, fmt.Sprintf("%s.args[%d]", path, i), valA, valB)
+			} else {
+				add(ChangeKindInvocation, fmt.Sprintf("%s.args[%d]", path, i),
+					a.Args[i].Type.String(), b.Args[i].Type.String())
+			}
 		}
 	}
 	return nil

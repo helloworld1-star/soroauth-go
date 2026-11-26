@@ -333,8 +333,13 @@ func TestAuthorizeEntryResignGuardScoped(t *testing.T) {
 		// overwrite observable regardless of Ed25519's determinism (signing
 		// the same payload twice with the same key produces the same bytes,
 		// which would make a real overwrite indistinguishable from a no-op).
-		markerBytes := xdr.ScBytes{0xAA, 0xBB}
-		marker := xdr.ScVal{Type: xdr.ScValTypeScvBytes, Bytes: &markerBytes}
+		// The marker has the classic account signature shape, because a G
+		// node's signature in any other shape breaks RuleAccountSignature
+		// and AuthorizeEntry discards it.
+		marker, err := Ed25519SignatureScVal(bytes.Repeat([]byte{0xAA}, 32), bytes.Repeat([]byte{0xBB}, 64))
+		if err != nil {
+			t.Fatal(err)
+		}
 		markerSigner := SignerFunc(first, func(context.Context, xdr.HashIdPreimage, [32]byte) (xdr.ScVal, error) {
 			return marker, nil
 		})

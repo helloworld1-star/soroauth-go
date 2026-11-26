@@ -35,6 +35,9 @@ var sentinelJSONErrors = []sentinelJSONError{
 	{soroauth.ErrAlreadySigned, "already_signed", "--entry", "credential node is already signed"},
 	{soroauth.ErrInvalidExpiration, "invalid_expiration", "--valid-until", "invalid signature expiration ledger"},
 	{soroauth.ErrTooManySignatures, "too_many_signatures", "--secret-env", "too many signatures for a classic account"},
+	// ErrDelegateDepthLimit comes before ErrDecodeLimit: a tree deeper than
+	// MaxDelegateDepth matches both, and the depth code is the precise one.
+	{soroauth.ErrDelegateDepthLimit, "delegate_depth_limit", "--entry", "delegate tree exceeds the depth limit"},
 	{soroauth.ErrDecodeLimit, "decode_limit", "--entry", "untrusted input exceeds a decode limit"},
 	{soroauth.ErrNoInvokeOperation, "no_invoke_operation", "--entry", "envelope carries no invokeHostFunction operation"},
 	{soroauth.ErrUnsupportedEnvelope, "unsupported_envelope", "--entry", "unsupported transaction envelope type"},
@@ -65,6 +68,10 @@ var sentinelJSONErrors = []sentinelJSONError{
 	{soroauth.ErrQuorumDisagreement, "quorum_disagreement", "--secret-env", "signers disagree on the signature"},
 	{soroauth.ErrMergePayloadMismatch, "merge_payload_mismatch", "--entry", "entries have different signing payloads"},
 	{soroauth.ErrMergeSignatureConflict, "merge_signature_conflict", "--entry", "entries have conflicting signatures for the same node"},
+	// Last: every host-rule violation matches it, and the rules with their
+	// own sentinel (duplicate delegate, too many signatures, delegate depth)
+	// are reported by that more precise code above.
+	{soroauth.ErrHostRuleViolation, "host_rule_violation", "--entry", "entry violates a soroban host rule"},
 }
 
 func machineError(err error) jsonErrorFields {

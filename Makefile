@@ -44,7 +44,7 @@ FUZZTIME ?= 30s
 SOAKTIME ?= 2m
 
 # Internal targets: help check-index
-.PHONY: all help check-index ci-local ci-local-check fmt vet test coverage fuzz soak mutation build server man site md-check md-format vectors vectors-check demo-check diagrams diagrams-check e2e clean parity parity-rust differential wasm wasm-check wasi-check wasm-budget ts-test jvm-test jvm-native rust-test grpc-test grpc-check freighter-check openapi-test openapi-check action-test changelog-check
+.PHONY: all help check-index ci-local ci-local-check fmt vet test coverage fuzz soak mutation build server man site md-check md-format vectors vectors-check demo-check diagrams diagrams-check e2e clean parity parity-rust host-probe differential wasm wasm-check wasi-check wasm-budget ts-test jvm-test jvm-native rust-test grpc-test grpc-check freighter-check openapi-test openapi-check action-test changelog-check
 
 define CI_CHECK_INDEX
 Required: ci / vet and test
@@ -89,7 +89,7 @@ Advisory: other module workflows
 Advisory: ci / adapters (walletsdk, gcpkms, awskms)
 	gofmt -l .; go vet ./...; go test -race ./... (in each module)
 Advisory: ci / jvm and rust
-	make jvm-native; make rust-test
+	make jvm-native; make rust-test; make host-probe
 	cargo clippy --locked --all-targets -- -D warnings; cargo fmt --check
 Advisory: ci / sdk-main and parity
 	go build ./...; go vet ./...; go test -race ./...
@@ -134,6 +134,7 @@ help:
 	@echo "  make e2e           build the test contract and run the live testnet suite"
 	@echo "  make parity        run the Python stellar-sdk parity harness"
 	@echo "  make parity-rust   run the Rust stellar-xdr parity harness"
+	@echo "  make host-probe    measure delegate limits and ordering rules against the real Soroban host"
 	@echo "  make differential  regenerate the differential corpus and check it with JS and Python"
 	@echo "  make wasm          build the js/wasm signing core into wasm/dist/"
 	@echo "  make wasm-check    build the wasm core and prove it matches the golden, differential and fuzz corpora"
@@ -384,6 +385,16 @@ parity-rust:
 		exit 1; \
 	}
 	cd testdata/parity-rust && cargo test --locked && cargo run --locked --bin parity
+
+# The host probe runs the real soroban-env-host (pinned =30.0.1) against
+# delegate trees and signature values: its tests assert the boundaries
+# docs/host-rules.md records, and its binary prints the measurements.
+host-probe:
+	@command -v cargo >/dev/null 2>&1 || { \
+		echo "cargo (Rust 1.93.0) is required for the host probe"; \
+		exit 1; \
+	}
+	cd testdata/host-probe && cargo test --locked && cargo run --locked --bin host-probe
 
 # The diagrams in docs/ are committed twice: the Graphviz source and the
 # rendered SVG. `diagrams` rewrites the SVGs; `diagrams-check` fails if they no

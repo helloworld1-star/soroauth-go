@@ -36,6 +36,11 @@ const (
 	// library cannot know that network setting offline; see ExpirationAfter for
 	// the documented protocol behaviour. Depth 64 is generous for all three
 	// credential arms and still far below the go-stellar-sdk default of 1500.
+	//
+	// It also fixes the delegate tree policy: MaxDelegateDepth is this bound
+	// expressed in delegate levels, the deepest fully signed tree that decodes
+	// under it. Changing this value moves that one, and the tests pinning
+	// MaxDelegateDepth say so.
 	MaxDecodeDepth = 64
 
 	// MaxDecodeInputBytes is the maximum decoded size of an untrusted

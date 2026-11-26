@@ -1,0 +1,26 @@
+# The Soroban host probe. It is not published and is not part of any
+# workspace: it runs the real soroban-env-host against delegate trees and
+# signature values, so the limits and ordering rules soroauth enforces
+# (docs/host-rules.md) are measured from the host rather than inferred.
+[package]
+name = "soroauth-host-probe"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.87.0"
+publish = false
+
+[[bin]]
+name = "host-probe"
+path = "src/main.rs"
+
+[lib]
+name = "soroauth_host_probe"
+path = "src/lib.rs"
+
+[dependencies]
+# Pinned exactly. 30.0.1 is the host Stellar testnet runs at protocol 30
+# (getVersionInfo reported stellar-core 30.0.0 / protocol 30 on 2026-11-25);
+# the delegate-tree, conversion, comparison and budget code the probe
+# exercises is identical in 27.0.1, 28.0.2 and 29.0.1. Never widen this to a
+# semver range: a measurement is only evidence when it names its build.
+soroban-env-host = { version = "=30.0.1", features = ["testutils"] }

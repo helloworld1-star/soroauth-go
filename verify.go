@@ -212,8 +212,15 @@ func parseAccountSignature(value xdr.ScVal) (publicKey, signature []byte, err er
 	if len(entries) != 1 {
 		return nil, nil, fmt.Errorf("signature vector holds %d entries, want exactly 1", len(entries))
 	}
+	return parseAccountSignatureElement(entries[0])
+}
 
-	element := entries[0]
+// parseAccountSignatureElement reads one {public_key, signature} map out of a
+// classic account's signature vector. parseAccountSignature uses it for the
+// single-signer shape VerifyEntry can check, and ValidateEntry uses it for
+// every element of a multisig vector, so there is one reading of the host's
+// AccountEd25519Signature struct.
+func parseAccountSignatureElement(element xdr.ScVal) (publicKey, signature []byte, err error) {
 	if element.Type != xdr.ScValTypeScvMap || element.Map == nil || *element.Map == nil {
 		return nil, nil, fmt.Errorf("signature vector holds %s, not a map", element.Type)
 	}

@@ -39,7 +39,7 @@ a preimage. As of the current vector set (18 vectors), the coverage per arm is:
 | Source account (`0`)         | 0 (skipped, 2 vectors)    | 0 (skipped, 2 vectors)  | No preimage; authenticated by envelope.                                                                                                                                         |
 | Address / legacy (`1`)       | 3                         | 3                       | `legacy_single_testnet`, `legacy_single_public`, `legacy_negative_nonce`                                                                                                        |
 | Address V2 (`2`)             | 8                         | 8                       | Includes `v2_muxed_address_in_argument`.                                                                                                                                        |
-| Address with delegates (`3`) | 5                         | 5                       | All five delegate vectors: `delegates_single_node`, `delegates_unsorted_with_nested`, `delegates_same_address_two_levels`, `delegates_from_legacy`, `delegates_chain_depth_57`. |
+| Address with delegates (`3`) | 5                         | 5                       | All five delegate vectors: `delegates_single_node`, `delegates_unsorted_with_nested`, `delegates_same_address_two_levels`, `delegates_from_legacy`, `delegates_chain_depth_54`. |
 
 Both harnesses cover **all five delegates-arm vectors**. Neither SDK refuses any
 delegates-arm case: the Python `stellar-sdk` and the Rust `stellar-xdr` both
@@ -59,8 +59,8 @@ The vectors include the structural limits a host enforces, not only the shapes
 someone happened to write down (#366): `v2_account_multisig_20_signatures` is
 exactly the host's `MAX_ACCOUNT_SIGNATURES = 20` account signatures,
 `v2_empty_args` is an empty argument list, `delegates_single_node` is the
-shallowest tree, and `delegates_chain_depth_57` is the deepest delegate nesting
-the library accepts end to end.
+shallowest tree, and `delegates_chain_depth_54` is the deepest delegate nesting
+the library accepts end to end: built, signed, and decoded again.
 
 The depth vector records a real disagreement between the two implementations
 rather than a shared limit:
@@ -68,15 +68,20 @@ rather than a shared limit:
 - The pinned `@stellar/stellar-sdk` imposes **no policy cap** on delegate
   nesting. Its only bound is the XDR codec's internal recursion guard (1500
   frames), and it will build — and sign — chains of several hundred delegates.
-- `DecodeAuthorizationEntry` applies the library's 64-frame XDR bound, and each
-  delegate costs roughly two frames, so it refuses a chain of 58 and accepts 57.
-- `WithDelegates` applies the `MaxDecodeDepth = 64` traversal bound, which
-  accepts a chain of 63 (its guard also visits the empty level below a leaf).
+- `DecodeAuthorizationEntry` applies the library's 64-frame XDR bound. Each
+  delegate level costs one frame on top of a fixed overhead, so an unsigned
+  chain of Void placeholders decodes up to 57 levels. Signing the leaf writes a
+  classic account signature, three frames deeper, so a signed chain decodes up
+  to 54 levels and refuses 55.
 
-The intersection is 57, which is the vector's recorded depth. The finding is
-that a client which trusts the JS SDK to decide "this tree is fine" can build an
-entry the Go library then refuses to decode; anything near that boundary should
-be validated against the intended library before it is signed.
+The intersection is 54, which is the vector's recorded depth and is
+`MaxDelegateDepth`, the one delegate-depth policy every soroauth path applies
+(see [host-rules.md](host-rules.md)). An earlier version of this vector recorded
+57: that is the unsigned bound, and the library signed that chain and then
+refused to decode its own output. The finding is that a client which trusts the
+JS SDK to decide "this tree is fine" can build an entry the Go library then
+refuses; anything near that boundary should be validated against the intended
+library before it is signed.
 
 ## What the wasm parity harness replays
 

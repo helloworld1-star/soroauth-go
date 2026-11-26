@@ -14,6 +14,53 @@ this project adheres to
 
 ### Added
 
+- `HostRules` enumerates every rule the Soroban host enforces on an
+  authorization entry, each with its `rs-soroban-env` source citation, and marks
+  the rules that cannot be checked offline with the reason instead of omitting
+  them. `ValidateEntry` checks every offline rule in one place — delegate order
+  and uniqueness, delegate depth, value depth, map key order in the host's value
+  order (not XDR byte order), value and symbol form, address types, the classic
+  multisig vector, and create-contract authorization — and reports a violation
+  as a `*HostRuleError` that matches the new `ErrHostRuleViolation`.
+  `AuthorizeEntry` and `StreamingSign` run it before any signer is called and
+  again on the signed result. [docs/host-rules.md](docs/host-rules.md) is the
+  documented copy, and a test fails if it and the code disagree. (#623)
+- The delegate tree depth limit is established from the host source and
+  enforced: the host reads a delegate at depth k only when k + 1 +
+  depth(signature) <= 100 (98 levels with Void signatures, 96 with ed25519), and
+  soroauth applies one policy, `MaxDelegateDepth = 54`, the deepest fully signed
+  tree its own bounded decoder can read back. `WithDelegates`, `ValidateEntry`,
+  `AuthorizeEntry` and `StreamingSign` refuse a deeper tree with the new
+  `ErrDelegateDepthLimit` before signing. The host has no breadth limit; the
+  per-delegate resource cost is measured and documented instead.
+  `testdata/host-probe` (`make host-probe`) measures every boundary against the
+  real soroban-env-host 30.0.1, and e2e scenarios S, S-host and S-over confirm
+  them on testnet. (#622)
+
+- Add five AST-based repository invariant linters (`NoPanic`, `NoLogging`,
+  `NoMathRand`, `NoFloats`, `NoMutation`) in `internal/invariants`, each with
+  violating and compliant test fixtures and an exemption directive
+  (`// invariant-allow: <rule> <reason>`). A root-level test runs all analyzers
+  across the full repo tree. (#627)
+
+- Load custom risk rules from JSON or YAML configuration via `LoadRiskRules`,
+  evaluated alongside built-in heuristics. Four rule types are supported:
+  `contract_allowlist`, `function_allowlist`, `max_amount` and
+  `forbidden_sac_admin`. Malformed rules fail at load time naming the offending
+  rule, and configured rules cannot suppress built-in findings. (#626)
+
+- Add `VerifyInvocationTree` to compare the library's invocation tree against
+  the host's reported tree structurally. A divergence reports the exact path
+  where the trees differ. Comparison covers function type, contract address,
+  function name, arguments and sub-invocations recursively at arbitrary depth.
+  (#625)
+
+- Audit every address-handling site for muxed account behaviour. Muxed addresses
+  in invocation arguments are now reported in full (`M…` strkey) via
+  `FormatArgumentAddress` and `FormatScVal`, never truncated to the underlying
+  account. The canonical JSON encoder/decoder round-trips the `muxed_account`
+  type, and credentials still refuse muxed addresses unchanged. (#624)
+
 - `examples/opentelemetry` traces the whole `rpcflow.SignAndSubmit` flow as one
   OpenTelemetry trace: record pass, signing, enforcing pass, submission and
   polling, with the two passes' resource fees and their difference as
@@ -158,6 +205,12 @@ this project adheres to
 
 ### Fixed
 
+- The `delegates_chain_depth_57` golden vector claimed to be the deepest
+  delegate nesting the library accepts end to end, but soroauth signed that
+  chain and then refused to decode its own output: signing the leaf adds three
+  levels of XDR nesting. The vector is regenerated at depth 54
+  (`delegates_chain_depth_54`), the deepest signed chain that decodes, and a
+  test decodes its signed entry. No emitted bytes change. (#622)
 - Document the intermittent macOS crash in the Node binding under `node:test` in
   `bindings/node/README.md`: Go's cgo entry reuses the g0 stack bounds recorded
   on an earlier entry, so being re-entered on another thread trips
@@ -235,6 +288,15 @@ this project adheres to
 
 ### Changed
 
+- `AuthorizeEntry` and `StreamingSign` now refuse, with `ErrHostRuleViolation`,
+  an entry or a signature the host would refuse for its ordering or canonical
+  form — including a signature on a classic `G…` node that is not the account
+  signature vector, which the host cannot accept. `WithDelegates` refuses a tree
+  deeper than `MaxDelegateDepth` (54) rather than 64; that refusal still matches
+  `ErrDecodeLimit`. `ValidateDelegateOrder` errors are now `*HostRuleError`s
+  with unchanged messages. The CLI reports the new sentinels as
+  `delegate_depth_limit` and `host_rule_violation` and exits with the
+  signing-refusal code. (#622, #623)
 - `soroauth explain-error` now exits 1 when the entry decodes but cannot be
   inspected (for example, a muxed credential address), in text mode as well as
   with `--json`. Text mode used to print the error and exit 0, and the `--json`
